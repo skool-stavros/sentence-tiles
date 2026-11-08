@@ -886,7 +886,12 @@ function showLibrary(){
   // a class link (…/sentence-tiles/?class=EB) opens that class only
   const fixed = (new URLSearchParams(location.search).get("class") || "").toUpperCase();
   if(levels.includes(fixed)) libLevel = fixed;
-  $("libLevels").hidden = levels.includes(fixed);
+  $("libLevels").hidden = !!fixed;
+  if(fixed && !levels.includes(fixed)){
+    $("libNote").textContent = "No games for " + fixed + " yet. Check again soon!";
+    $("libList").innerHTML = "";
+    return;
+  }
   if(!levels.includes(libLevel)) libLevel = levels.length === 1 ? levels[0] : null;
   const lv = $("libLevels"); lv.innerHTML = "";
   levels.forEach(l => {
