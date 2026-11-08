@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SKooL Sentence Tiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EDF5; --surface:#FFFFFF; --ink:#14213D; --muted:#3E4C66;
+  --track:#D3DEEB; --tile:#F3D58C; --tile-edge:#B98B33; --tile-ink:#2A1C00;
+  --ok:#1F7A45; --bad:#B3302A; --accent:#1D4E89; --accent-ink:#FFFFFF;
+  --t1:#1D5FB8; --t2:#C2410C; --dot:#C3CFDE; --shade:rgba(10,20,40,.55);
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1828; --surface:#18243A; --ink:#F1F5FB; --muted:#B9C6DA;
+    --track:#22324D; --tile:#E9C46A; --tile-edge:#9C7424; --tile-ink:#221600;
+    --ok:#4CC27F; --bad:#FF7A70; --accent:#6EA8F0; --accent-ink:#0F1828;
+    --t1:#6EA8F0; --t2:#FB923C; --dot:#33476A; --shade:rgba(0,0,0,.65); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1828; --surface:#18243A; --ink:#F1F5FB; --muted:#B9C6DA;
+  --track:#22324D; --tile:#E9C46A; --tile-edge:#9C7424; --tile-ink:#221600;
+  --ok:#4CC27F; --bad:#FF7A70; --accent:#6EA8F0; --accent-ink:#0F1828;
+  --t1:#6EA8F0; --t2:#FB923C; --dot:#33476A; --shade:rgba(0,0,0,.65); color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Andika","Century Gothic","Trebuchet MS",sans-serif;
+  font-weight:700; line-height:1.35; -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit}
+.wrap{max-width:96rem;margin:0 auto;padding:1rem}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:1rem}
+.top h1{font-size:clamp(1.3rem,3vw,1.9rem);margin:0}
+.level{background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:.15rem .6rem;font-size:1rem}
+.top .spacer{flex:1}
+
+/* setup */
+.setup{max-width:40rem;margin:3rem auto;text-align:center}
+.setup h2{font-size:clamp(1.6rem,4vw,2.4rem);margin:.25rem 0 .5rem}
+.setup p{font-size:1.15rem;color:var(--muted);margin:0 0 2rem}
+.modes{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center}
+.mode{
+  min-width:12rem;padding:1.4rem 1.6rem;border-radius:18px;border:3px solid var(--accent);
+  background:var(--surface);color:var(--ink);font-size:1.4rem;cursor:pointer;
+}
+.mode small{display:block;font-size:1rem;color:var(--muted);margin-top:.35rem}
+.rules{margin-top:2rem;font-size:1.05rem;color:var(--muted)}
+
+/* game */
+.board{display:grid;gap:1rem;grid-template-columns:1fr}
+.board.two{grid-template-columns:1fr 1fr}
+@media (max-width:760px){ .board.two{grid-template-columns:1fr} }
+
+.panel{
+  --team:var(--accent);
+  background:var(--surface);border-radius:18px;padding:1rem 1rem 1.2rem;
+  border-top:10px solid var(--team);display:flex;flex-direction:column;
+}
+.panel.t1{--team:var(--t1)} .panel.t2{--team:var(--t2)}
+.phead{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem}
+.pname{font-size:1.35rem;color:var(--team)}
+.pscore{margin-left:auto;font-size:1.6rem}
+.pscore span{font-size:1rem;color:var(--muted);margin-left:.2rem}
+.bump{animation:bump .5s}
+@keyframes bump{40%{transform:scale(1.35)}}
+
+.dots{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.8rem}
+.dots i{width:1.6rem;height:.55rem;border-radius:4px;background:var(--dot)}
+.dots i.now{background:var(--team)}
+.dots i.ok{background:var(--ok)}
+.dots i.skip{background:var(--bad)}
+
+.label{font-size:.95rem;color:var(--muted);margin:0 0 .25rem}
+.cue{font-size:clamp(1.25rem,2.6vw,1.9rem);margin:0 0 .9rem}
+.board.two .cue{font-size:clamp(1.15rem,1.9vw,1.6rem)}
+
+.track{
+  min-height:4rem;border-radius:14px;background:var(--track);
+  padding:.5rem;display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;
+  border:3px dashed transparent;
+}
+.track.empty::before{content:attr(data-empty);color:var(--muted);padding:0 .5rem;font-size:1rem}
+.track.ok{border-color:var(--ok);border-style:solid}
+.track.bad{border-color:var(--bad);border-style:solid;animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.tray{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0;min-height:3.2rem}
+.tile{
+  font-size:clamp(1.1rem,2.6vw,1.5rem);
+  background:var(--tile);color:var(--tile-ink);
+  border:none;border-radius:10px;padding:.4rem .8rem;cursor:pointer;
+  box-shadow:0 4px 0 var(--tile-edge);transition:transform .08s, box-shadow .08s;
+}
+.board.two .tile{font-size:clamp(1rem,1.8vw,1.35rem);padding:.35rem .7rem}
+.tile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--tile-edge)}
+
+.feedback{min-height:1.8rem;font-size:1.15rem;margin:0 0 .8rem}
+.feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:auto}
+.btn{
+  font-size:1.05rem;border-radius:12px;padding:.55rem 1rem;cursor:pointer;
+  border:3px solid var(--team, var(--accent));background:transparent;color:var(--team, var(--accent));
+}
+.btn.primary{background:var(--team, var(--accent));color:#fff}
+.btn[disabled]{opacity:.4;cursor:default}
+.top .btn{--team:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+.pdone{text-align:center;padding:2rem 0;margin:auto 0}
+.pdone p{font-size:1.4rem;margin:.3rem 0}
+
+/* results */
+.results{position:fixed;inset:0;background:var(--shade);display:grid;place-items:center;padding:1rem;z-index:20}
+.rcard{background:var(--surface);border-radius:20px;padding:2rem;max-width:34rem;width:100%;text-align:center}
+.rcard h2{font-size:2rem;margin:0 0 1rem}
+.rrow{display:flex;justify-content:space-between;font-size:1.5rem;padding:.5rem 0;border-bottom:2px solid var(--track)}
+.rrow.t1{color:var(--t1)} .rrow.t2{color:var(--t2)}
+.rcard .controls{justify-content:center;margin-top:1.5rem}
+[hidden]{display:none!important}
+/* greek preview */
+.preview{text-align:center;padding:1.5rem .5rem 2rem;cursor:pointer}
+.gk{font-size:clamp(1.6rem,3.6vw,2.6rem);margin:0 0 1.2rem;line-height:1.3}
+.board.two .gk{font-size:clamp(1.35rem,2.5vw,2.1rem)}
+.count{color:var(--muted);font-size:1.2rem;margin:0}
+.count b{color:var(--team, var(--accent));font-size:1.6rem}
+/* library */
+.library{max-width:44rem;margin:1.5rem auto}
+.library h2{font-size:clamp(1.6rem,4vw,2.3rem);margin:0 0 1rem;text-align:center}
+.levels{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-bottom:1.5rem}
+.levels button{font-size:1.3rem;padding:.6rem 1.1rem;border-radius:12px;border:3px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.levels button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+#libList{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+#libList button{width:100%;text-align:left;font-size:1.25rem;padding:.9rem 1rem;border-radius:14px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer}
+.libnote{text-align:center;color:var(--muted);font-size:1.15rem;margin:0 0 1rem}
+.update{margin-top:1.4rem}
+.update .btn{--team:var(--accent)}
+/* share */
+.recent .share{border:2px solid var(--track);background:var(--surface);color:var(--accent);border-radius:12px;font-size:1rem;padding:0 .8rem;cursor:pointer}
+#shareLink{width:100%;font:inherit;font-weight:400;font-size:.95rem;padding:.6rem;border-radius:12px;border:2px solid var(--track);background:var(--bg);color:var(--ink);resize:none;word-break:break-all}
+.sharenote{color:var(--muted);font-size:1.05rem;margin:0 0 1rem}
+.sharenote:last-child{margin:1rem 0 0}
+/* form */
+.form{background:var(--surface);border-radius:20px;padding:1.5rem;text-align:left;display:grid;gap:1.2rem}
+.field label,.field .flabel{display:block;font-size:1.1rem;margin-bottom:.4rem}
+.field select,.field input{
+  width:100%;font:inherit;font-size:1.2rem;padding:.6rem .8rem;border-radius:12px;
+  border:3px solid var(--track);background:var(--bg);color:var(--ink);
+}
+.field select:focus,.field input:focus{border-color:var(--accent);outline:none}
+.seg{display:flex;gap:.6rem}
+.seg button{flex:1;font-size:1.25rem;padding:.7rem;border-radius:12px;border:3px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.go{font-size:1.35rem;padding:.85rem;border-radius:14px;border:none;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.go[disabled]{opacity:.5;cursor:default}
+.setup .status{min-height:1.6rem;font-size:1.1rem;color:var(--muted);margin:0}
+.setup .status.bad{color:var(--bad)}
+.recent{margin-top:1.6rem;text-align:left}
+.recent h3{font-size:1.15rem;margin:0 0 .6rem;color:var(--muted)}
+.recent ul{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+.recent li{display:flex;gap:.5rem}
+.recent .play{flex:1;text-align:left;font-size:1.05rem;padding:.6rem .8rem;border-radius:12px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer}
+.recent .play span{color:var(--muted);font-weight:400}
+.recent .del{border:none;background:transparent;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:0 .5rem}
+.spin{display:inline-block;width:1rem;height:1rem;border:3px solid var(--track);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;vertical-align:-2px;margin-right:.4rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){ .track.bad,.bump{animation:none} .tile{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1 id="topic">Sentence Tiles</h1><span class="level" id="level" hidden></span>
+    <span class="spacer"></span>
+    <button class="btn" id="newRound" hidden>New game</button>
+  </div>
+
+  <section class="setup" id="setup">
+    <div class="form">
+      <div class="field">
+        <label for="lvl">Level</label>
+        <select id="lvl">
+          <optgroup label="English">
+            <option>EJAB</option><option>EA</option><option selected>EB</option>
+            <option>EA1</option><option>EA2</option><option>EB1</option><option>EB12</option>
+            <option>EB2</option><option>EC1</option><option>EC12</option><option>EC2</option>
+          </optgroup>
+          <optgroup label="Deutsch">
+            <option>DJAB</option><option>DA</option><option>DB</option>
+            <option>DA1</option><option>DA2</option><option>DB1</option><option>DB2</option>
+            <option>DC1</option><option>DC2</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <span class="flabel" id="teamsLabel">Number of teams</span>
+        <div class="seg" role="group" aria-labelledby="teamsLabel">
+          <button type="button" data-teams="1" aria-pressed="false">1 team</button>
+          <button type="button" data-teams="2" aria-pressed="true">2 teams</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="gram">Grammar point</label>
+        <input id="gram" type="text" placeholder="e.g. past simple vs past continuous" autocomplete="off">
+      </div>
+      <button class="go" id="create">Create game</button>
+      <p class="status" id="status" aria-live="polite"></p>
+    </div>
+    <div class="rules">10 sentences per team · 3 trap tiles in each · correct first time: 10 points · after a mistake or a hint: 5 · skip: 0</div>
+
+    <div class="recent" id="recentBox">
+      <h3>Play a saved game</h3>
+      <ul id="recent"></ul>
+      <div class="update">
+        <button class="btn" id="updBtn">⬆ Update student page</button>
+        <p class="sharenote" id="updMsg">Saves one index.html with all these games. Upload it to GitHub; the Google Classroom link stays the same.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="library" id="library" hidden>
+    <h2>Practice games</h2>
+    <div class="levels" id="libLevels"></div>
+    <p class="libnote" id="libNote"></p>
+    <ul id="libList"></ul>
+  </section>
+
+  <section class="board" id="board" hidden></section>
+</div>
+
+<div class="results" id="shareBox" hidden>
+  <div class="rcard">
+    <h2>Link for students</h2>
+    <p class="sharenote" id="shareTopic"></p>
+    <textarea id="shareLink" readonly rows="4" aria-label="Game link"></textarea>
+    <div class="controls">
+      <button class="btn primary" id="shareCopy">Copy link</button>
+      <button class="btn" id="shareSend" hidden>Send…</button>
+      <button class="btn" id="shareClose">Close</button>
+    </div>
+    <p class="sharenote" id="shareMsg">Students play on their own: 10 sentences, with the Greek preview and points. No Claude account needed.</p>
+  </div>
+</div>
+
+<div class="results" id="results" hidden>
+  <div class="rcard">
+    <h2 id="rtitle"></h2>
+    <div id="rrows"></div>
+    <div class="controls">
+      <button class="btn primary" id="replay">Play again</button>
+      <button class="btn" id="again">New game</button>
+    </div>
+  </div>
+</div>
+
+<script id="app">
+// copy of this page as it was loaded, used to build the student page
+const SOURCE = (() => {
+  try {
+    const c = document.documentElement.cloneNode(true);
+    c.querySelectorAll("script:not(#app)").forEach(x => x.remove());
+    return "<!DOCTYPE html>\n" + c.outerHTML;
+  } catch(e){ return ""; }
+})();
+const MARK = "[/*LIB" + "RARY*/]";
+const LIBRARY = [/*LIBRARY*/];   // games built into the student page
+let LIBMODE = false;
+const PER_ROUND = 10;
+const STORE = "skool-tiles-games";
+const STUDENT_PAGE = "https://skool-stavros.github.io/sentence-tiles/";
+let SHARED = false;
+const $ = id => document.getElementById(id);
+
+/* ---------- built-in example (works without Claude) ---------- */
+const EX_HINTS = {
+  simple: "Present simple — every day, always, on Mondays",
+  cont:   "Present continuous — am / is / are + -ing"
+};
+const EX_GREEK = {
+  "I play football every day.": "Παίζω ποδόσφαιρο κάθε μέρα.",
+  "My mum drinks coffee every morning.": "Η μαμά μου πίνει καφέ κάθε πρωί.",
+  "Tom doesn't like milk.": "Στον Τομ δεν αρέσει το γάλα.",
+  "She swims on Saturdays.": "Αυτή κολυμπάει τα Σάββατα.",
+  "Does your dog eat carrots?": "Τρώει καρότα ο σκύλος σου;",
+  "We go to school by bus.": "Πηγαίνουμε στο σχολείο με το λεωφορείο.",
+  "My brother gets up at seven o'clock.": "Ο αδερφός μου σηκώνεται στις επτά.",
+  "They don't watch TV in the morning.": "Δεν βλέπουν τηλεόραση το πρωί.",
+  "Where does Anna live?": "Πού μένει η Άννα;",
+  "My cat loves fish.": "Η γάτα μου λατρεύει το ψάρι.",
+  "Look! The cat is sleeping.": "Κοίτα! Η γάτα κοιμάται.",
+  "We are eating pizza now.": "Τρώμε πίτσα τώρα.",
+  "The children are singing at the moment.": "Τα παιδιά τραγουδάνε αυτή τη στιγμή.",
+  "I am not watching TV now.": "Δεν βλέπω τηλεόραση τώρα.",
+  "What are you doing now?": "Τι κάνεις τώρα;",
+  "Listen! The baby is crying.": "Άκου! Το μωρό κλαίει.",
+  "Dad is cooking dinner now.": "Ο μπαμπάς μαγειρεύει βραδινό τώρα.",
+  "Are they playing in the garden now?": "Παίζουν στον κήπο τώρα;",
+  "My sister isn't reading a book at the moment.": "Η αδερφή μου δεν διαβάζει βιβλίο αυτή τη στιγμή.",
+  "Look! It is raining.": "Κοίτα! Βρέχει."
+};
+const EXAMPLE = {
+  id: "example", level: "EB", topic: "Present simple or continuous?", example: true,
+  items: ([
+    {t:"simple", cue:"⚽ I · play football · every day",
+     answer:["I","play","football","every day"], extra:["playing","plays","am"],
+     full:"I play football every day."},
+    {t:"simple", cue:"☕ my mum · drink coffee · every morning",
+     answer:["my mum","drinks","coffee","every morning"], extra:["drink","drinking","is"],
+     full:"My mum drinks coffee every morning."},
+    {t:"simple", cue:"🥛 Tom · not like · milk",
+     answer:["Tom","doesn't","like","milk"], extra:["don't","likes","isn't"],
+     full:"Tom doesn't like milk."},
+    {t:"simple", cue:"🏊 she · swim · on Saturdays",
+     answer:["she","swims","on Saturdays"], extra:["swim","swimming","is"],
+     full:"She swims on Saturdays."},
+    {t:"simple", cue:"🥕 your dog · eat carrots?",
+     answer:["does","your dog","eat","carrots","?"], extra:["do","eats","is"],
+     full:"Does your dog eat carrots?"},
+    {t:"simple", cue:"🚌 we · go to school · by bus",
+     answer:["we","go","to school","by bus"], extra:["goes","going","are"],
+     full:"We go to school by bus."},
+    {t:"simple", cue:"⏰ my brother · get up · at seven o'clock",
+     answer:["my brother","gets up","at seven o'clock"], extra:["get up","getting up","is"],
+     full:"My brother gets up at seven o'clock."},
+    {t:"simple", cue:"📺 they · not watch TV · in the morning",
+     answer:["they","don't","watch","TV","in the morning"], extra:["doesn't","watching","aren't"],
+     full:"They don't watch TV in the morning."},
+    {t:"simple", cue:"🏠 where · Anna · live?",
+     answer:["where","does","Anna","live","?"], extra:["do","lives","is"],
+     full:"Where does Anna live?"},
+    {t:"simple", cue:"🐟 my cat · love · fish",
+     answer:["my cat","loves","fish"], extra:["love","loving","is"],
+     full:"My cat loves fish."},
+
+    {t:"cont", cue:"🐱 Look! · the cat · sleep",
+     answer:["Look!","the cat","is","sleeping"], extra:["sleeps","sleep","are"],
+     full:"Look! The cat is sleeping."},
+    {t:"cont", cue:"🍕 we · eat pizza · now",
+     answer:["we","are","eating","pizza","now"], extra:["eat","is","eats"],
+     full:"We are eating pizza now."},
+    {t:"cont", cue:"🎤 the children · sing · at the moment",
+     answer:["the children","are","singing","at the moment"], extra:["is","sing","sings"],
+     full:"The children are singing at the moment."},
+    {t:"cont", cue:"📺 I · not watch TV · now",
+     answer:["I","am","not","watching","TV","now"], extra:["watch","don't","is"],
+     full:"I am not watching TV now."},
+    {t:"cont", cue:"🤔 what · you · do · now?",
+     answer:["what","are","you","doing","now","?"], extra:["do","does","is"],
+     full:"What are you doing now?"},
+    {t:"cont", cue:"👶 Listen! · the baby · cry",
+     answer:["Listen!","the baby","is","crying"], extra:["cries","are","cry"],
+     full:"Listen! The baby is crying."},
+    {t:"cont", cue:"🍝 Dad · cook dinner · now",
+     answer:["Dad","is","cooking","dinner","now"], extra:["cooks","are","cook"],
+     full:"Dad is cooking dinner now."},
+    {t:"cont", cue:"🌳 they · play in the garden · now?",
+     answer:["are","they","playing","in the garden","now","?"], extra:["is","play","do"],
+     full:"Are they playing in the garden now?"},
+    {t:"cont", cue:"📖 my sister · not read a book · at the moment",
+     answer:["my sister","isn't","reading","a book","at the moment"], extra:["doesn't","reads","read"],
+     full:"My sister isn't reading a book at the moment."},
+    {t:"cont", cue:"🌧️ Look! · it · rain",
+     answer:["Look!","it","is","raining"], extra:["rains","rain","are"],
+     full:"Look! It is raining."}
+  ]).map(it => ({group: it.t, cue: it.cue, answer: it.answer, extra: it.extra, full: it.full, hint: EX_HINTS[it.t], greek: EX_GREEK[it.full] || ""}))
+};
+LIBRARY.push({id:EXAMPLE.id, level:EXAMPLE.level, topic:EXAMPLE.topic, items:EXAMPLE.items});
+
+/* ---------- labels per language ---------- */
+const UI = {
+  en: {use:"Use these words", empty:"Tap the tiles in the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
+       first:"Put some tiles on the line first.", soFar:"Good so far. Keep going!", wrong:n=>"Not yet! Tile "+n+" is wrong.",
+       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
+  de: {use:"Benutze diese Wörter", empty:"Tippe die Wörter in der richtigen Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
+       first:"Lege zuerst Wörter auf die Linie.", soFar:"Gut so weit. Mach weiter!", wrong:n=>"Noch nicht! Wort "+n+" ist falsch.",
+       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
+};
+const langOf = level => level.startsWith("D") ? "de" : "en";
+
+function levelInfo(code){
+  const lang = langOf(code) === "de" ? "German" : "English";
+  const lv = code.slice(1);
+  const desc = {
+    JAB: "first-year beginners, young children: tiny sentences of 3–5 words, very basic words only",
+    A:   "second-year beginners, children about 8–11: short sentences of 3–6 words, simple everyday vocabulary",
+    B:   "third-year beginners (pre-A1), children about 8–11: short sentences of 4–7 words, simple everyday vocabulary",
+    A1:"CEFR A1", A2:"CEFR A2", B1:"CEFR B1", B12:"CEFR B1–B2", B2:"CEFR B2",
+    C1:"CEFR C1", C12:"CEFR C1–C2", C2:"CEFR C2"
+  }[lv] || lv;
+  return {lang, desc};
+}
+
+/* ---------- saved games ---------- */
+function loadGames(){ try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch(e){ return []; } }
+function saveGames(list){ try { localStorage.setItem(STORE, JSON.stringify(list.slice(0,12))); } catch(e){} }
+function renderRecent(){
+  const list = [...loadGames(), EXAMPLE];
+  const ul = $("recent"); ul.innerHTML = "";
+  list.forEach(g => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = "play";
+    b.innerHTML = "<b></b> <span></span>";
+    b.querySelector("b").textContent = g.level + " · " + g.topic;
+    const nTeamsFit = g.items.length >= PER_ROUND * 2 ? "1 or 2 teams" : "1 team";
+    b.querySelector("span").textContent = (g.example ? "(example) · " : "") + nTeamsFit;
+    b.onclick = () => {
+      if(g.items.length < PER_ROUND * teams){
+        setStatus("This saved game has sentences for 1 team only. Choose 1 team, or create a new game for 2 teams.", true);
+        return;
+      }
+      setStatus("");
+      start(g, teams);
+    };
+    li.appendChild(b);
+    const sh = document.createElement("button");
+    sh.className = "share"; sh.textContent = "🔗 Share"; sh.setAttribute("aria-label","Share " + g.topic + " with students");
+    sh.onclick = () => openShare(g);
+    li.appendChild(sh);
+    if(!g.example){
+      const d = document.createElement("button");
+      d.className = "del"; d.textContent = "✕"; d.setAttribute("aria-label","Delete " + g.topic);
+      d.onclick = () => { saveGames(loadGames().filter(x => x.id !== g.id)); renderRecent(); };
+      li.appendChild(d);
+    }
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- setup form ---------- */
+let teams = 2;
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+  teams = +b.dataset.teams;
+  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+});
+function setStatus(msg, bad, spin){
+  const s = $("status");
+  s.className = "status" + (bad ? " bad" : "");
+  s.innerHTML = spin ? '<span class="spin"></span>' : "";
+  s.appendChild(document.createTextNode(msg));
+}
+
+const samplePromise = (window.claude && window.claude.use) ? window.claude.use("sample") : Promise.resolve(null);
+
+function buildPrompt(level, topic, POOL){
+  const {lang, desc} = levelInfo(level);
+  const simpleHint = lang === "German" && /^D(JAB|A|B)$/.test(level) ? ", very simple" : "";
+  return `You write grammar practice for a private language school in Greece.
+Language of the sentences: ${lang}.
+Class level: ${level} — ${desc}.
+Grammar point: ${topic}
+
+Write exactly ${POOL} different sentences for a "sentence tiles" game. Students see a cue, then tap word tiles into the correct order to build the sentence. Every sentence must practise the grammar point. Use vocabulary and sentence length suitable for the level. If the grammar point contrasts two or more forms, split the sentences evenly between them and give each sentence a "group" label naming its form; otherwise use one group label for all.
+
+For each sentence give:
+- "group": short label of the form practised (e.g. "past simple").
+- "cue": an emoji, then the key words in their BASIC form, separated by " · " (e.g. "🐱 the cat · sleep · Look!" for "Look! The cat is sleeping."). The cue must NOT show the correct form; the student must apply the grammar. Include the time words or signals that decide the form.
+- "answer": the tiles of the correct sentence in order. Keep fixed phrases or noun groups as one tile (e.g. "the cat", "every day", "at the moment"); put the grammar-relevant words in separate tiles. Write tiles in lower case except "I", names, German nouns, and words that are always capitalised. Put "?" as its own last tile in questions; no full stop tile.
+- "extra": exactly 3 trap tiles: wrong forms that students typically confuse with the correct ones (wrong tense, wrong auxiliary, missing -s, wrong case or ending, etc.). A trap tile must never be the same as a tile in "answer", and no trap tile may make a different correct sentence possible.
+- "full": the finished sentence with normal capitals and punctuation.
+- "greek": a natural Greek translation of the full sentence. Students see it first and must think how to say it in ${lang}.
+- "hint": one short rule reminder for this form, at the students' level (in ${lang}${simpleHint}).
+
+The tiles must allow only ONE correct order: avoid adverbs or time phrases that could go in several places unless their place is fixed.
+
+Reply with JSON only, in this shape:
+{"title": "short title of the grammar point (in English)", "items": [{"group": "", "cue": "", "answer": [""], "extra": ["", "", ""], "full": "", "greek": "", "hint": ""}]}`;
+}
+
+function cleanItems(raw){
+  const items = (raw && Array.isArray(raw.items)) ? raw.items : [];
+  const seen = new Set();
+  return items.filter(it => {
+    if(!it || typeof it.full !== "string" || !Array.isArray(it.answer) || !Array.isArray(it.extra)) return false;
+    it.answer = it.answer.filter(w => typeof w === "string" && w.trim()).map(w => w.trim());
+    const ans = new Set(it.answer);
+    it.extra = it.extra.filter(w => typeof w === "string" && w.trim() && !ans.has(w.trim())).map(w => w.trim()).slice(0,3);
+    if(it.answer.length < 2 || it.extra.length < 2) return false;
+    if(seen.has(it.full)) return false;
+    seen.add(it.full);
+    it.group = String(it.group || "all");
+    it.cue = String(it.cue || "");
+    it.hint = String(it.hint || "");
+    it.greek = String(it.greek || "");
+    return true;
+  });
+}
+
+let creating = false;
+$("create").onclick = async () => {
+  if(creating) return;
+  const level = $("lvl").value, topic = $("gram").value.trim();
+  if(!topic){ setStatus("Type a grammar point first.", true); $("gram").focus(); return; }
+  creating = true; $("create").disabled = true;
+  const POOL = PER_ROUND * teams;   // 10 for 1 team, 20 for 2 teams
+  setStatus("Writing " + POOL + " sentences… this can take up to a minute.", false, true);
+  try {
+    const sample = await samplePromise;
+    if(!sample){
+      setStatus("Creating new games works when this page is open in Claude. You can still play the saved games below.", true);
+      return;
+    }
+    const raw = await sample.json(buildPrompt(level, topic, POOL), {modelTier: "default", cache: false});
+    const items = cleanItems(raw);
+    const need = PER_ROUND * teams;
+    if(items.length < need){
+      setStatus("Only " + items.length + " good sentences came back. Tap Create game to try again.", true);
+      return;
+    }
+    const game = {id: Date.now().toString(36), level, topic: (raw.title || topic), items};
+    saveGames([game, ...loadGames()]);
+    renderRecent();
+    setStatus("");
+    start(game, teams);
+  } catch(e){
+    const msg = {
+      not_granted: "Claude was not allowed to write the sentences. Allow it when asked, then try again.",
+      rate_limited: "Too many requests right now. Wait a minute, then try again.",
+      invalid_json: "The answer came back in the wrong shape. Tap Create game to try again."
+    }[e && e.code] || "Something went wrong (" + ((e && e.code) || "error") + "). Tap Create game to try again.";
+    setStatus(msg, true);
+  } finally {
+    creating = false; $("create").disabled = false;
+  }
+};
+
+/* ---------- game ---------- */
+let panels = [], current = null, currentTeams = 2;
+
+function shuffle(a){
+  a = a.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function deal(items, nTeams){
+  const groups = {};
+  items.forEach(it => (groups[it.group] = groups[it.group] || []).push(it));
+  const lists = shuffle(Object.values(groups)).map(shuffle);
+  const mixed = [];
+  while(lists.some(l => l.length)) lists.forEach(l => { if(l.length) mixed.push(l.shift()); });
+  const hands = Array.from({length:nTeams}, () => []);
+  mixed.forEach((it,k) => hands[k % nTeams].push(it));
+  return hands.map(h => shuffle(h.slice(0, PER_ROUND)));
+}
+
+// Older saved games (or answers that missed the Greek) get their Greek added once, then saved
+async function addGreek(game){
+  const missing = game.items.filter(it => !it.greek);
+  if(!missing.length) return;
+  const sample = await samplePromise;
+  if(!sample) return;
+  const lang = langOf(game.level) === "de" ? "German" : "English";
+  const prompt = `Translate each ${lang} sentence into natural Greek, suitable for children learning ${lang}. Reply with JSON only, in this shape: {"greek": ["..."]}, one translation per sentence, same order.\n\n` +
+    missing.map((it,i) => (i+1) + ". " + it.full).join("\n");
+  try {
+    const r = await sample.json(prompt, {modelTier: "quick"});
+    if(r && Array.isArray(r.greek)) missing.forEach((it,i) => { if(typeof r.greek[i] === "string") it.greek = r.greek[i].trim(); });
+    if(!game.example) saveGames(loadGames().map(g => g.id === game.id ? game : g));
+  } catch(e){}
+}
+
+async function start(game, nTeams){
+  if(game.items.some(it => !it.greek)){
+    setStatus("Adding the Greek sentences…", false, true);
+    await addGreek(game);
+    setStatus("");
+  }
+  current = game; currentTeams = nTeams;
+  const T = UI[langOf(game.level)];
+  $("topic").textContent = game.topic;
+  $("level").textContent = game.level; $("level").hidden = false;
+  $("setup").hidden = true;
+  $("results").hidden = true;
+  $("newRound").hidden = SHARED && !LIBMODE;
+  const board = $("board");
+  board.hidden = false;
+  board.className = "board" + (nTeams === 2 ? " two" : "");
+  board.innerHTML = "";
+  const hands = deal(game.items, nTeams);
+  panels = hands.map((items,k) => makePanel(board, T, {
+    name: nTeams === 1 ? T.cls : T.team(k+1),
+    cls: nTeams === 1 ? "" : "t" + (k+1),
+    items
+  }));
+  window.scrollTo(0,0);
+}
+
+function makePanel(board, T, team){
+  const el = document.createElement("article");
+  el.className = "panel " + team.cls;
+  el.innerHTML = `
+    <div class="phead"><span class="pname"></span><span class="pscore"><b>0</b><span></span></span></div>
+    <div class="dots"></div>
+    <div class="body">
+     <div class="preview" hidden><p class="gk"></p><p class="count"></p></div>
+     <div class="work">
+      <p class="label"></p>
+      <p class="cue"></p>
+      <div class="track empty"></div>
+      <div class="tray"></div>
+      <p class="feedback"></p>
+      <div class="controls">
+        <button class="btn primary" data-a="check"></button>
+        <button class="btn" data-a="clear"></button>
+        <button class="btn" data-a="hint"></button>
+        <button class="btn" data-a="skip"></button>
+      </div>
+     </div>
+    </div>`;
+  board.appendChild(el);
+  const q = s => el.querySelector(s);
+  q(".pname").textContent = team.name;
+  q(".pscore span").textContent = T.pts;
+  q(".label").textContent = T.use;
+  q(".track").dataset.empty = T.empty;
+  ["check","clear","hint","skip"].forEach(a => q(`[data-a="${a}"]`).textContent = T[a]);
+
+  const p = {name:team.name, cls:team.cls, items:team.items, i:0, score:0, results:[], done:false,
+             placed:[], pool:[], tries:0, hinted:false, locked:false};
+
+  function load(){
+    const it = p.items[p.i];
+    p.placed = []; p.tries = 0; p.hinted = false; p.locked = false;
+    const tiles = [...it.answer, ...it.extra].map((w,k)=>({id:k,w}));
+    let pool = shuffle(tiles), guard = 0;
+    while(guard++ < 20 && pool.slice(0,it.answer.length).map(t=>t.w).join("|") === it.answer.join("|")) pool = shuffle(tiles);
+    p.pool = pool;
+    q(".cue").textContent = it.cue;
+    q(".track").classList.remove("ok","bad");
+    setFb("");
+    render();
+    showGreek(it);
+  }
+
+  // show the Greek sentence for 5 seconds, then the tiles (tap to skip the wait)
+  function showGreek(it){
+    const work = q(".work"), pv = q(".preview");
+    clearInterval(p.timer);
+    if(!it.greek){ pv.hidden = true; work.hidden = false; return; }
+    work.hidden = true; pv.hidden = false;
+    q(".gk").textContent = it.greek;
+    let n = 5;
+    const cnt = q(".count");
+    cnt.innerHTML = T.think(n);
+    const reveal = () => { clearInterval(p.timer); pv.hidden = true; work.hidden = false; };
+    p.timer = setInterval(() => { n--; if(n <= 0) reveal(); else cnt.innerHTML = T.think(n); }, 1000);
+    pv.onclick = reveal;
+  }
+
+  function render(){
+    const track = q(".track"), tray = q(".tray");
+    track.innerHTML = ""; tray.innerHTML = "";
+    track.classList.toggle("empty", !p.placed.length);
+    p.placed.forEach(t => track.appendChild(tile(t, () => { p.placed = p.placed.filter(x=>x.id!==t.id); p.pool.push(t); afterMove(); })));
+    p.pool.forEach(t => tray.appendChild(tile(t, () => { p.pool = p.pool.filter(x=>x.id!==t.id); p.placed.push(t); afterMove(); })));
+    drawDots();
+    el.querySelectorAll(".controls .btn").forEach(b => b.disabled = p.locked);
+  }
+  function drawDots(){
+    const dots = q(".dots"); dots.innerHTML = "";
+    p.items.forEach((_,k) => {
+      const d = document.createElement("i");
+      if(p.results[k]) d.className = p.results[k];
+      else if(k === p.i && !p.done) d.className = "now";
+      dots.appendChild(d);
+    });
+  }
+  function tile(t, onTap){
+    const b = document.createElement("button");
+    b.className = "tile"; b.textContent = t.w;
+    b.onclick = () => { if(!p.locked) onTap(); };
+    return b;
+  }
+  function afterMove(){ q(".track").classList.remove("bad","ok"); setFb(""); render(); }
+  function setFb(msg, cls){ const f = q(".feedback"); f.textContent = msg; f.className = "feedback " + (cls||""); }
+
+  function addPoints(n){
+    p.score += n;
+    const s = q(".pscore");
+    s.querySelector("b").textContent = p.score;
+    s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump");
+  }
+
+  function next(){
+    p.i++;
+    if(p.i >= p.items.length){
+      p.done = true;
+      q(".body").innerHTML = `<div class="pdone"><p></p><p></p></div>`;
+      const ps = q(".pdone").querySelectorAll("p");
+      ps[0].textContent = T.done; ps[1].textContent = p.score + " " + T.pts;
+      drawDots();
+      checkAllDone(T);
+    } else load();
+  }
+
+  el.addEventListener("click", e => {
+    const a = e.target.closest("[data-a]")?.dataset.a;
+    if(!a || p.locked) return;
+    const it = p.items[p.i];
+    const track = q(".track");
+    if(a === "check"){
+      const got = p.placed.map(t=>t.w);
+      if(!got.length){ setFb(T.first,"bad"); return; }
+      if(got.join("|") === it.answer.join("|")){
+        const pts = (p.tries === 0 && !p.hinted) ? 10 : 5;
+        addPoints(pts);
+        p.results[p.i] = "ok"; p.locked = true;
+        track.classList.add("ok");
+        setFb("✓ " + it.full + "  +" + pts, "ok");
+        render();
+        setTimeout(next, 1700);
+      } else {
+        p.tries++;
+        track.classList.remove("bad"); void track.offsetWidth; track.classList.add("bad");
+        let k = 0; while(k<got.length && got[k]===it.answer[k]) k++;
+        if(k===got.length && got.length<it.answer.length) setFb(T.soFar,"bad");
+        else setFb(T.wrong(k+1),"bad");
+      }
+    } else if(a === "clear"){
+      p.pool.push(...p.placed); p.placed = []; afterMove();
+    } else if(a === "hint"){
+      p.hinted = true;
+      setFb((it.hint ? it.hint + " · " : "") + T.starts(it.answer[0]), "");
+    } else if(a === "skip"){
+      p.results[p.i] = "skip"; p.locked = true;
+      setFb(T.answer + it.full + "  +0", "bad");
+      render();
+      setTimeout(next, 2500);
+    }
+  });
+
+  load();
+  return p;
+}
+
+function checkAllDone(T){
+  if(!panels.every(p => p.done)) return;
+  const rows = $("rrows"); rows.innerHTML = "";
+  panels.forEach(p => {
+    const r = document.createElement("div");
+    r.className = "rrow " + p.cls;
+    r.innerHTML = "<span></span><span></span>";
+    r.children[0].textContent = p.name;
+    r.children[1].textContent = p.score + " " + T.pts;
+    rows.appendChild(r);
+  });
+  let title = T.well;
+  if(panels.length === 2){
+    const [a,b] = panels;
+    title = a.score === b.score ? T.draw : T.wins(a.score > b.score ? a.name : b.name);
+  }
+  $("rtitle").textContent = title;
+  setTimeout(() => $("results").hidden = false, 900);
+}
+
+function backToSetup(){
+  if(LIBMODE){ showLibrary(); return; }
+  $("results").hidden = true; $("board").hidden = true; $("board").innerHTML = "";
+  $("newRound").hidden = true; $("setup").hidden = false;
+  $("topic").textContent = "Sentence Tiles"; $("level").hidden = true;
+  renderRecent();
+}
+$("newRound").onclick = backToSetup;
+$("again").onclick = backToSetup;
+$("replay").onclick = () => start(current, currentTeams);
+$("gram").addEventListener("keydown", e => { if(e.key === "Enter") $("create").click(); });
+/* ---------- student library ---------- */
+let libLevel = null;
+function showLibrary(){
+  LIBMODE = true; SHARED = true;
+  $("setup").hidden = true; $("results").hidden = true;
+  $("board").hidden = true; $("board").innerHTML = "";
+  $("newRound").hidden = true; $("newRound").textContent = "All games";
+  $("again").hidden = false; $("again").textContent = "All games";
+  $("topic").textContent = "Sentence Tiles"; $("level").hidden = true;
+  $("library").hidden = false;
+  const order = [...$("lvl").options].map(o => o.value);
+  const levels = [...new Set(LIBRARY.map(g => g.level))].sort((a,b) => order.indexOf(a) - order.indexOf(b));
+  if(!libLevel){ try { libLevel = localStorage.getItem("skool-tiles-level"); } catch(e){} }
+  if(!levels.includes(libLevel)) libLevel = levels.length === 1 ? levels[0] : null;
+  const lv = $("libLevels"); lv.innerHTML = "";
+  levels.forEach(l => {
+    const b = document.createElement("button");
+    b.textContent = l; b.setAttribute("aria-pressed", l === libLevel);
+    b.onclick = () => { libLevel = l; try { localStorage.setItem("skool-tiles-level", l); } catch(e){} showLibrary(); };
+    lv.appendChild(b);
+  });
+  $("libNote").textContent = libLevel ? "" : "Choose your class.";
+  const ul = $("libList"); ul.innerHTML = "";
+  if(libLevel) LIBRARY.filter(g => g.level === libLevel).forEach(g => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.textContent = g.topic;
+    b.onclick = () => { $("library").hidden = true; start(g, 1); };
+    li.appendChild(b); ul.appendChild(li);
+  });
+}
+
+async function updateStudentPage(){
+  const msg = $("updMsg"), btn = $("updBtn");
+  const games = [...loadGames(), EXAMPLE];
+  btn.disabled = true;
+  try {
+    msg.textContent = "Preparing " + games.length + " games…";
+    for(const g of games) if(g.items.some(it => !it.greek)) await addGreek(g);
+    if(!SOURCE.includes(MARK)){ msg.textContent = "Couldn’t build the student page."; return; }
+    const lib = games.map(g => ({id:g.id, level:g.level, topic:g.topic, items:g.items}));
+    const html = SOURCE.replace(MARK, () => JSON.stringify(lib).replace(/</g, "\\u003c"));
+    const dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
+    if(!dl){ msg.textContent = "Saving works when this page is open in Claude."; return; }
+    await dl.save({filename: "index.html", data: html});
+    msg.textContent = "Saved index.html with " + games.length + " games. Upload it to the sentence-tiles repo on GitHub (replace the old one).";
+  } catch(e){
+    msg.textContent = (e && e.code === "declined") ? "Not saved." : "Couldn’t save the file (" + ((e && e.code) || "error") + ").";
+  } finally { btn.disabled = false; }
+}
+$("updBtn").onclick = updateStudentPage;
+
+/* ---------- share links ---------- */
+async function packGame(g){
+  const data = JSON.stringify({l:g.level, t:g.topic,
+    i:g.items.map(it => [it.group, it.cue, it.answer, it.extra, it.full, it.hint, it.greek || ""])});
+  const stream = new Blob([new TextEncoder().encode(data)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  const buf = new Uint8Array(await new Response(stream).arrayBuffer());
+  let s = ""; buf.forEach(b => s += String.fromCharCode(b));
+  return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+async function unpackGame(code){
+  const bin = atob(code.replace(/-/g,"+").replace(/_/g,"/"));
+  const buf = Uint8Array.from(bin, c => c.charCodeAt(0));
+  const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const d = JSON.parse(await new Response(stream).text());
+  return {id:"shared", level:d.l, topic:d.t,
+    items:d.i.map(a => ({group:a[0], cue:a[1], answer:a[2], extra:a[3], full:a[4], hint:a[5], greek:a[6]}))};
+}
+async function openShare(g){
+  if(g.items.some(it => !it.greek)){
+    setStatus("Adding the Greek sentences…", false, true);
+    await addGreek(g);
+    setStatus("");
+  }
+  let link;
+  try { link = STUDENT_PAGE + "#g=" + await packGame(g); }
+  catch(e){ setStatus("This browser can’t make share links. Try Chrome.", true); return; }
+  $("shareTopic").textContent = g.level + " · " + g.topic;
+  $("shareLink").value = link;
+  $("shareSend").hidden = !navigator.share;
+  $("shareCopy").textContent = "Copy link";
+  $("shareBox").hidden = false;
+}
+$("shareCopy").onclick = async () => {
+  const ta = $("shareLink");
+  try { await navigator.clipboard.writeText(ta.value); }
+  catch(e){ ta.focus(); ta.select(); try { document.execCommand("copy"); } catch(_){} }
+  $("shareCopy").textContent = "Copied ✓";
+};
+$("shareSend").onclick = async () => {
+  try { await navigator.share({title: $("shareTopic").textContent, url: $("shareLink").value}); } catch(e){}
+};
+$("shareClose").onclick = () => $("shareBox").hidden = true;
+
+/* ---------- start: shared link or teacher screen ---------- */
+(async () => {
+  const m = location.hash.match(/^#g=([A-Za-z0-9_-]+)/);
+  if(!m){ if(LIBRARY.length) showLibrary(); else renderRecent(); return; }
+  SHARED = true;
+  $("setup").hidden = true;
+  $("again").hidden = true;
+  try { start(await unpackGame(m[1]), 1); }
+  catch(e){
+    $("setup").hidden = false;
+    $("setup").innerHTML = '<p class="status bad" style="font-size:1.3rem">This game link doesn’t work. Ask your teacher for a new link.</p>';
+  }
+})();
+</script>
+</body>
+</html>
