@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en"><head><!-- frame-runtime --><!-- /frame-runtime -->
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SKooL Sentence Tiles</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&amp;display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#E6EDF5; --surface:#FFFFFF; --ink:#14213D; --muted:#3E4C66;
@@ -149,7 +150,8 @@ button{font:inherit}
 .levels button{font-size:1.3rem;padding:.6rem 1.1rem;border-radius:12px;border:3px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
 .levels button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 #libList{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
-#libList button{width:100%;text-align:left;font-size:1.25rem;padding:.9rem 1rem;border-radius:14px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer}
+#libList button{width:100%;text-align:left;font-size:1.25rem;padding:.9rem 1rem;border-radius:14px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:.8rem}
+#libList .num{flex:none;min-width:3rem;text-align:center;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:.2rem .5rem;font-size:1.3rem}
 .libnote{text-align:center;color:var(--muted);font-size:1.15rem;margin:0 0 1rem}
 .update{margin-top:1.4rem}
 .update .btn{--team:var(--accent)}
@@ -158,6 +160,16 @@ button{font:inherit}
 #shareLink{width:100%;font:inherit;font-weight:400;font-size:.95rem;padding:.6rem;border-radius:12px;border:2px solid var(--track);background:var(--bg);color:var(--ink);resize:none;word-break:break-all}
 .sharenote{color:var(--muted);font-size:1.05rem;margin:0 0 1rem}
 .sharenote:last-child{margin:1rem 0 0}
+/* logo + sound */
+.top .logo{height:56px;width:auto;border-radius:10px;background:#fff;display:block;flex:none}
+.plogo{height:34px;width:auto;border-radius:6px;background:#fff;display:block;flex:none}
+@media (max-width:600px){ .top .logo{height:42px} .plogo{height:26px} }
+#sound{--team:var(--accent);padding:.45rem .7rem}
+/* timer */
+.timer{position:relative;height:1.8rem;border-radius:9px;background:var(--track);margin:0 0 .7rem;overflow:hidden}
+.timer i{position:absolute;top:0;bottom:0;left:0;background:var(--team, var(--accent));transition:width 1s linear;opacity:.8}
+.timer.low i{background:var(--bad)}
+.timer span{position:relative;display:block;text-align:center;font-size:1.1rem;line-height:1.8rem;color:var(--ink)}
 /* form */
 .form{background:var(--surface);border-radius:20px;padding:1.5rem;text-align:left;display:grid;gap:1.2rem}
 .field label,.field .flabel{display:block;font-size:1.1rem;margin-bottom:.4rem}
@@ -179,7 +191,8 @@ button{font:inherit}
 .recent li{display:flex;gap:.5rem}
 .recent .play{flex:1;text-align:left;font-size:1.05rem;padding:.6rem .8rem;border-radius:12px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer}
 .recent .play span{color:var(--muted);font-weight:400}
-.recent .del{border:none;background:transparent;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:0 .5rem}
+.recent .del{border:2px solid var(--track);background:transparent;color:var(--muted);font-size:1rem;cursor:pointer;padding:0 .7rem;border-radius:12px;white-space:nowrap}
+.recent .del.armed{background:var(--bad);border-color:var(--bad);color:#fff}
 .spin{display:inline-block;width:1rem;height:1rem;border:3px solid var(--track);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;vertical-align:-2px;margin-right:.4rem}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){ .track.bad,.bump{animation:none} .tile{transition:none} }
@@ -188,9 +201,11 @@ button{font:inherit}
 <body>
 <div class="wrap">
   <div class="top">
-    <h1 id="topic">Sentence Tiles</h1><span class="level" id="level" hidden=""></span>
+    <img class="logo" id="logo" alt="SKooL Keramydas Languages" src="data:image/jpeg;base64,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">
+    <h1 id="topic">Sentence Tiles</h1><span class="level" id="level" hidden></span>
     <span class="spacer"></span>
-    <button class="btn" id="newRound" hidden="">New game</button>
+    <button class="btn" id="newRound" hidden>New game</button>
+    <button class="btn" id="sound" aria-label="Sound on">🔊</button>
   </div>
 
   <section class="setup" id="setup">
@@ -199,7 +214,7 @@ button{font:inherit}
         <label for="lvl">Level</label>
         <select id="lvl">
           <optgroup label="English">
-            <option>EJAB</option><option>EA</option><option selected="">EB</option>
+            <option>EJAB</option><option>EA</option><option selected>EB</option>
             <option>EA1</option><option>EA2</option><option>EB1</option><option>EB12</option>
             <option>EB2</option><option>EC1</option><option>EC12</option><option>EC2</option>
           </optgroup>
@@ -221,10 +236,14 @@ button{font:inherit}
         <label for="gram">Grammar point</label>
         <input id="gram" type="text" placeholder="e.g. past simple vs past continuous" autocomplete="off">
       </div>
+      <div class="field">
+        <label for="num">Page or module number (optional)</label>
+        <input id="num" type="text" inputmode="numeric" placeholder="e.g. 34" autocomplete="off">
+      </div>
       <button class="go" id="create">Create game</button>
       <p class="status" id="status" aria-live="polite"></p>
     </div>
-    <div class="rules">10 sentences per team · 3 trap tiles in each · correct first time: 10 points · after a mistake or a hint: 5 · skip: 0</div>
+    <div class="rules">10 sentences per game (with 2 teams, both teams get the same 10 in a different order) · 3 trap tiles in each · correct first time: 10 points · after a mistake or a hint: 5 · skip: 0 · 30 seconds per sentence (missed ones come back later, for 5 points) · first team to finish: +20</div>
 
     <div class="recent" id="recentBox">
       <h3>Play a saved game</h3>
@@ -236,7 +255,7 @@ button{font:inherit}
     </div>
   </section>
 
-  <section class="library" id="library" hidden="">
+  <section class="library" id="library" hidden>
     <h2>Practice games</h2>
     <div class="levels" id="libLevels"></div>
     <div class="seg" id="libTeams" role="group" aria-label="Number of teams" style="max-width:24rem;margin:0 auto 1.5rem">
@@ -247,24 +266,24 @@ button{font:inherit}
     <ul id="libList"></ul>
   </section>
 
-  <section class="board" id="board" hidden=""></section>
+  <section class="board" id="board" hidden></section>
 </div>
 
-<div class="results" id="shareBox" hidden="">
+<div class="results" id="shareBox" hidden>
   <div class="rcard">
     <h2>Link for students</h2>
     <p class="sharenote" id="shareTopic"></p>
-    <textarea id="shareLink" readonly="" rows="4" aria-label="Game link"></textarea>
+    <textarea id="shareLink" readonly rows="4" aria-label="Game link"></textarea>
     <div class="controls">
       <button class="btn primary" id="shareCopy">Copy link</button>
-      <button class="btn" id="shareSend" hidden="">Send…</button>
+      <button class="btn" id="shareSend" hidden>Send…</button>
       <button class="btn" id="shareClose">Close</button>
     </div>
     <p class="sharenote" id="shareMsg">Students play on their own: 10 sentences, with the Greek preview and points. No Claude account needed.</p>
   </div>
 </div>
 
-<div class="results" id="results" hidden="">
+<div class="results" id="results" hidden>
   <div class="rcard">
     <h2 id="rtitle"></h2>
     <div id="rrows"></div>
@@ -285,7 +304,7 @@ const SOURCE = (() => {
   } catch(e){ return ""; }
 })();
 const MARK = "[/*LIB" + "RARY*/]";
-const LIBRARY = [{"id":"mw871wf0","level":"DA","topic":"Present tense of sein (to be)","items":[{"group":"ich bin","cue":"👦 ich · sein · acht Jahre alt","answer":["Ich","bin","acht","Jahre","alt"],"extra":["ist","bist","sind"],"full":"Ich bin acht Jahre alt.","greek":"Είμαι οκτώ χρονών.","hint":"ich → bin"},{"group":"du bist","cue":"🧒 du · sein · mein Freund","answer":["Du","bist","mein","Freund"],"extra":["bin","ist","seid"],"full":"Du bist mein Freund.","greek":"Είσαι ο φίλος μου.","hint":"du → bist"},{"group":"er/sie/es ist","cue":"🐱 die Katze · sein · klein","answer":["Die","Katze","ist","klein"],"extra":["sind","bist","bin"],"full":"Die Katze ist klein.","greek":"Η γάτα είναι μικρή.","hint":"er/sie/es → ist"},{"group":"wir sind","cue":"👫 wir · sein · in der Schule","answer":["Wir","sind","in","der","Schule"],"extra":["seid","ist","bin"],"full":"Wir sind in der Schule.","greek":"Είμαστε στο σχολείο.","hint":"wir → sind"},{"group":"ihr seid","cue":"👧👦 ihr · sein · laut","answer":["Ihr","seid","laut"],"extra":["sind","bist","ist"],"full":"Ihr seid laut.","greek":"Είστε δυνατοί (φωνακλάδες).","hint":"ihr → seid"},{"group":"sie/Sie sind","cue":"🐶 die Hunde · sein · groß","answer":["Die","Hunde","sind","groß"],"extra":["ist","seid","bin"],"full":"Die Hunde sind groß.","greek":"Τα σκυλιά είναι μεγάλα.","hint":"sie (viele) → sind"},{"group":"ich bin","cue":"😊 ich · sein · heute · glücklich","answer":["Ich","bin","heute","glücklich"],"extra":["ist","bist","sind"],"full":"Ich bin heute glücklich.","greek":"Σήμερα είμαι χαρούμενος.","hint":"ich → bin"},{"group":"du bist","cue":"❓ wo · du · sein","answer":["Wo","bist","du","?"],"extra":["bin","ist","seid"],"full":"Wo bist du?","greek":"Πού είσαι;","hint":"du → bist"},{"group":"er/sie/es ist","cue":"🍎 der Apfel · sein · rot","answer":["Der","Apfel","ist","rot"],"extra":["sind","bist","seid"],"full":"Der Apfel ist rot.","greek":"Το μήλο είναι κόκκινο.","hint":"er/sie/es → ist"},{"group":"wir sind","cue":"⚽ wir · sein · Freunde","answer":["Wir","sind","Freunde"],"extra":["seid","ist","bin"],"full":"Wir sind Freunde.","greek":"Είμαστε φίλοι.","hint":"wir → sind"}]},{"id":"example","level":"EB","topic":"Present simple or continuous?","items":[{"group":"simple","cue":"⚽ I · play football · every day","answer":["I","play","football","every day"],"extra":["playing","plays","am"],"full":"I play football every day.","hint":"Present simple — every day, always, on Mondays","greek":"Παίζω ποδόσφαιρο κάθε μέρα."},{"group":"simple","cue":"☕ my mum · drink coffee · every morning","answer":["my mum","drinks","coffee","every morning"],"extra":["drink","drinking","is"],"full":"My mum drinks coffee every morning.","hint":"Present simple — every day, always, on Mondays","greek":"Η μαμά μου πίνει καφέ κάθε πρωί."},{"group":"simple","cue":"🥛 Tom · not like · milk","answer":["Tom","doesn't","like","milk"],"extra":["don't","likes","isn't"],"full":"Tom doesn't like milk.","hint":"Present simple — every day, always, on Mondays","greek":"Στον Τομ δεν αρέσει το γάλα."},{"group":"simple","cue":"🏊 she · swim · on Saturdays","answer":["she","swims","on Saturdays"],"extra":["swim","swimming","is"],"full":"She swims on Saturdays.","hint":"Present simple — every day, always, on Mondays","greek":"Αυτή κολυμπάει τα Σάββατα."},{"group":"simple","cue":"🥕 your dog · eat carrots?","answer":["does","your dog","eat","carrots","?"],"extra":["do","eats","is"],"full":"Does your dog eat carrots?","hint":"Present simple — every day, always, on Mondays","greek":"Τρώει καρότα ο σκύλος σου;"},{"group":"simple","cue":"🚌 we · go to school · by bus","answer":["we","go","to school","by bus"],"extra":["goes","going","are"],"full":"We go to school by bus.","hint":"Present simple — every day, always, on Mondays","greek":"Πηγαίνουμε στο σχολείο με το λεωφορείο."},{"group":"simple","cue":"⏰ my brother · get up · at seven o'clock","answer":["my brother","gets up","at seven o'clock"],"extra":["get up","getting up","is"],"full":"My brother gets up at seven o'clock.","hint":"Present simple — every day, always, on Mondays","greek":"Ο αδερφός μου σηκώνεται στις επτά."},{"group":"simple","cue":"📺 they · not watch TV · in the morning","answer":["they","don't","watch","TV","in the morning"],"extra":["doesn't","watching","aren't"],"full":"They don't watch TV in the morning.","hint":"Present simple — every day, always, on Mondays","greek":"Δεν βλέπουν τηλεόραση το πρωί."},{"group":"simple","cue":"🏠 where · Anna · live?","answer":["where","does","Anna","live","?"],"extra":["do","lives","is"],"full":"Where does Anna live?","hint":"Present simple — every day, always, on Mondays","greek":"Πού μένει η Άννα;"},{"group":"simple","cue":"🐟 my cat · love · fish","answer":["my cat","loves","fish"],"extra":["love","loving","is"],"full":"My cat loves fish.","hint":"Present simple — every day, always, on Mondays","greek":"Η γάτα μου λατρεύει το ψάρι."},{"group":"cont","cue":"🐱 Look! · the cat · sleep","answer":["Look!","the cat","is","sleeping"],"extra":["sleeps","sleep","are"],"full":"Look! The cat is sleeping.","hint":"Present continuous — am / is / are + -ing","greek":"Κοίτα! Η γάτα κοιμάται."},{"group":"cont","cue":"🍕 we · eat pizza · now","answer":["we","are","eating","pizza","now"],"extra":["eat","is","eats"],"full":"We are eating pizza now.","hint":"Present continuous — am / is / are + -ing","greek":"Τρώμε πίτσα τώρα."},{"group":"cont","cue":"🎤 the children · sing · at the moment","answer":["the children","are","singing","at the moment"],"extra":["is","sing","sings"],"full":"The children are singing at the moment.","hint":"Present continuous — am / is / are + -ing","greek":"Τα παιδιά τραγουδάνε αυτή τη στιγμή."},{"group":"cont","cue":"📺 I · not watch TV · now","answer":["I","am","not","watching","TV","now"],"extra":["watch","don't","is"],"full":"I am not watching TV now.","hint":"Present continuous — am / is / are + -ing","greek":"Δεν βλέπω τηλεόραση τώρα."},{"group":"cont","cue":"🤔 what · you · do · now?","answer":["what","are","you","doing","now","?"],"extra":["do","does","is"],"full":"What are you doing now?","hint":"Present continuous — am / is / are + -ing","greek":"Τι κάνεις τώρα;"},{"group":"cont","cue":"👶 Listen! · the baby · cry","answer":["Listen!","the baby","is","crying"],"extra":["cries","are","cry"],"full":"Listen! The baby is crying.","hint":"Present continuous — am / is / are + -ing","greek":"Άκου! Το μωρό κλαίει."},{"group":"cont","cue":"🍝 Dad · cook dinner · now","answer":["Dad","is","cooking","dinner","now"],"extra":["cooks","are","cook"],"full":"Dad is cooking dinner now.","hint":"Present continuous — am / is / are + -ing","greek":"Ο μπαμπάς μαγειρεύει βραδινό τώρα."},{"group":"cont","cue":"🌳 they · play in the garden · now?","answer":["are","they","playing","in the garden","now","?"],"extra":["is","play","do"],"full":"Are they playing in the garden now?","hint":"Present continuous — am / is / are + -ing","greek":"Παίζουν στον κήπο τώρα;"},{"group":"cont","cue":"📖 my sister · not read a book · at the moment","answer":["my sister","isn't","reading","a book","at the moment"],"extra":["doesn't","reads","read"],"full":"My sister isn't reading a book at the moment.","hint":"Present continuous — am / is / are + -ing","greek":"Η αδερφή μου δεν διαβάζει βιβλίο αυτή τη στιγμή."},{"group":"cont","cue":"🌧️ Look! · it · rain","answer":["Look!","it","is","raining"],"extra":["rains","rain","are"],"full":"Look! It is raining.","hint":"Present continuous — am / is / are + -ing","greek":"Κοίτα! Βρέχει."}]}];   // games built into the student page
+const LIBRARY = [/*LIBRARY*/];   // games built into the student page
 let LIBMODE = false;
 const PER_ROUND = 10;
 const STORE = "skool-tiles-games";
@@ -386,15 +405,16 @@ const EXAMPLE = {
      full:"Look! It is raining."}
   ]).map(it => ({group: it.t, cue: it.cue, answer: it.answer, extra: it.extra, full: it.full, hint: EX_HINTS[it.t], greek: EX_GREEK[it.full] || ""}))
 };
+LIBRARY.push({id:EXAMPLE.id, level:EXAMPLE.level, topic:EXAMPLE.topic, items:EXAMPLE.items});
 
 /* ---------- labels per language ---------- */
 const UI = {
   en: {use:"Use these words", empty:"Tap or drag the tiles into the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
        first:"Put some tiles on the line first.", soFar:"Good so far. Keep going!", wrong:n=>"Not yet! Tile "+n+" (red) is wrong. Drag tiles to move them.",
-       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
+       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, wait:"Waiting for the other team to finish this sentence…", timeUp:"⏰ Time’s up! This sentence comes back later.", firstDone:"🏁 First to finish! +20 bonus", think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
   de: {use:"Benutze diese Wörter", empty:"Tippe oder ziehe die Wörter in die richtige Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
        first:"Lege zuerst Wörter auf die Linie.", soFar:"Gut so weit. Mach weiter!", wrong:n=>"Noch nicht! Wort "+n+" (rot) ist falsch. Ziehe die Wörter an die richtige Stelle.",
-       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
+       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, wait:"Warte, bis das andere Team diesen Satz fertig hat…", timeUp:"⏰ Die Zeit ist um! Dieser Satz kommt später wieder.", firstDone:"🏁 Als Erste fertig! +20 Bonus", think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
 };
 const langOf = level => level.startsWith("D") ? "de" : "en";
 
@@ -414,22 +434,19 @@ function levelInfo(code){
 /* ---------- saved games ---------- */
 function loadGames(){ try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch(e){ return []; } }
 function saveGames(list){ try { localStorage.setItem(STORE, JSON.stringify(list.slice(0,12))); } catch(e){} }
+const HIDE_EX = "skool-tiles-hide-example";
+const withExample = list => { let hide = false; try { hide = localStorage.getItem(HIDE_EX) === "1"; } catch(e){} return hide ? list : [...list, EXAMPLE]; };
 function renderRecent(){
-  const list = [...loadGames(), EXAMPLE];
+  const list = withExample(loadGames());
   const ul = $("recent"); ul.innerHTML = "";
   list.forEach(g => {
     const li = document.createElement("li");
     const b = document.createElement("button");
     b.className = "play";
     b.innerHTML = "<b></b> <span></span>";
-    b.querySelector("b").textContent = g.level + " · " + g.topic;
-    const nTeamsFit = g.items.length >= PER_ROUND * 2 ? "1 or 2 teams" : "1 team";
-    b.querySelector("span").textContent = (g.example ? "(example) · " : "") + nTeamsFit;
+    b.querySelector("b").textContent = g.level + " · " + (g.num ? g.num + " · " : "") + g.topic;
+    b.querySelector("span").textContent = g.example ? "(example)" : "";
     b.onclick = () => {
-      if(g.items.length < PER_ROUND * teams){
-        setStatus("This saved game has sentences for 1 team only. Choose 1 team, or create a new game for 2 teams.", true);
-        return;
-      }
       setStatus("");
       start(g, teams);
     };
@@ -438,10 +455,22 @@ function renderRecent(){
     sh.className = "share"; sh.textContent = "🔗 Share"; sh.setAttribute("aria-label","Share " + g.topic + " with students");
     sh.onclick = () => openShare(g);
     li.appendChild(sh);
-    if(!g.example){
+    {
+      // tap once: "Sure?" — tap again within 3 seconds: deleted
       const d = document.createElement("button");
-      d.className = "del"; d.textContent = "✕"; d.setAttribute("aria-label","Delete " + g.topic);
-      d.onclick = () => { saveGames(loadGames().filter(x => x.id !== g.id)); renderRecent(); };
+      d.className = "del"; d.textContent = "🗑 Delete"; d.setAttribute("aria-label","Delete " + g.topic);
+      let armed = null;
+      d.onclick = () => {
+        if(!armed){
+          d.textContent = "Sure?"; d.classList.add("armed");
+          armed = setTimeout(() => { armed = null; d.textContent = "🗑 Delete"; d.classList.remove("armed"); }, 3000);
+          return;
+        }
+        clearTimeout(armed);
+        if(g.example){ try { localStorage.setItem(HIDE_EX, "1"); } catch(e){} }
+        else saveGames(loadGames().filter(x => x.id !== g.id));
+        renderRecent();
+      };
       li.appendChild(d);
     }
     ul.appendChild(li);
@@ -450,9 +479,9 @@ function renderRecent(){
 
 /* ---------- setup form ---------- */
 let teams = 2;
-document.querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+document.querySelectorAll("#setup .seg button").forEach(b => b.onclick = () => {
   teams = +b.dataset.teams;
-  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  document.querySelectorAll("#setup .seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
 });
 function setStatus(msg, bad, spin){
   const s = $("status");
@@ -476,8 +505,8 @@ Write exactly ${POOL} different sentences for a "sentence tiles" game. Students 
 For each sentence give:
 - "group": short label of the form practised (e.g. "past simple").
 - "cue": an emoji, then the key words in their BASIC form, separated by " · " (e.g. "🐱 the cat · sleep · Look!" for "Look! The cat is sleeping."). The cue must NOT show the correct form; the student must apply the grammar. Include the time words or signals that decide the form.
-- "answer": the tiles of the correct sentence in order. Keep fixed phrases or noun groups as one tile (e.g. "the cat", "every day", "at the moment"); put the grammar-relevant words in separate tiles. Write tiles in lower case except "I", names, German nouns, and words that are always capitalised. Put "?" as its own last tile in questions; no full stop tile.
-- "extra": exactly 3 trap tiles: wrong forms that students typically confuse with the correct ones (wrong tense, wrong auxiliary, missing -s, wrong case or ending, etc.). A trap tile must never be the same as a tile in "answer", and no trap tile may make a different correct sentence possible.
+- "answer": the tiles of the correct sentence in order. EVERY verb form, auxiliary, modal, negation (not, n't forms, nicht, kein), subject pronoun and question word is its OWN tile, so students must decide the form and the word order themselves: never put two of these together (wrong: "did we", "has been", "don't like", "is sleeping", "hat gemacht"; right: "did" + "we", "has" + "been", "don't" + "like"). This matters most for inversion, questions, passives and perfect/continuous tenses. Only grammar-neutral groups may stay together as one tile (e.g. "the cat", "every day", "at the moment", "in the garden"). Write tiles in lower case except "I", names, German nouns, and words that are always capitalised. Put "?" as its own last tile in questions; no full stop tile.
+- "extra": exactly 3 trap tiles, each a SINGLE word: wrong forms that students typically confuse with the correct ones (wrong tense, wrong auxiliary, missing -s, wrong case or ending, etc.). A trap tile must never be the same as a tile in "answer", and no trap tile may make a different correct sentence possible.
 - "full": the finished sentence with normal capitals and punctuation.
 - "greek": a natural Greek translation of the full sentence. Students see it first and must think how to say it in ${lang}.
 - "hint": one short rule reminder for this form, at the students' level (in ${lang}${simpleHint}).
@@ -488,12 +517,25 @@ Reply with JSON only, in this shape:
 {"title": "short title of the grammar point (in English)", "items": [{"group": "", "cue": "", "answer": [""], "extra": ["", "", ""], "full": "", "greek": "", "hint": ""}]}`;
 }
 
+// Safety net: a tile that hides a verb/auxiliary/pronoun inside a group ("did we") is split into single words
+const GRAMMAR_WORDS = new Set(("do does did don't doesn't didn't am is are was were be been being isn't aren't wasn't weren't " +
+  "have has had haven't hasn't hadn't will won't would wouldn't can can't cannot could couldn't shall should shouldn't " +
+  "may might must mustn't not never i you he she it we they me him her us them " +
+  "bin bist ist sind seid war warst waren wart habe hast hat haben habt hatte hatten werde wirst wird werden werdet wurde wurden " +
+  "kann kannst können konnte muss musst müssen musste will willst wollen wollte darf darfst dürfen soll sollst sollen " +
+  "nicht kein keine ich du er sie es wir ihr").split(" "));
+function splitGrammar(tile){
+  const words = tile.split(/\s+/);
+  if(words.length < 2) return [tile];
+  return words.some(w => GRAMMAR_WORDS.has(w.toLowerCase().replace(/[.,!?]/g, ""))) ? words : [tile];
+}
+
 function cleanItems(raw){
   const items = (raw && Array.isArray(raw.items)) ? raw.items : [];
   const seen = new Set();
   return items.filter(it => {
     if(!it || typeof it.full !== "string" || !Array.isArray(it.answer) || !Array.isArray(it.extra)) return false;
-    it.answer = it.answer.filter(w => typeof w === "string" && w.trim()).map(w => w.trim());
+    it.answer = it.answer.filter(w => typeof w === "string" && w.trim()).map(w => w.trim()).flatMap(splitGrammar);
     const ans = new Set(it.answer);
     it.extra = it.extra.filter(w => typeof w === "string" && w.trim() && !ans.has(w.trim())).map(w => w.trim()).slice(0,3);
     if(it.answer.length < 2 || it.extra.length < 2) return false;
@@ -513,7 +555,7 @@ $("create").onclick = async () => {
   const level = $("lvl").value, topic = $("gram").value.trim();
   if(!topic){ setStatus("Type a grammar point first.", true); $("gram").focus(); return; }
   creating = true; $("create").disabled = true;
-  const POOL = PER_ROUND * teams;   // 10 for 1 team, 20 for 2 teams
+  const POOL = PER_ROUND;   // always 10 sentences per game
   setStatus("Writing " + POOL + " sentences… this can take up to a minute.", false, true);
   try {
     const sample = await samplePromise;
@@ -523,12 +565,13 @@ $("create").onclick = async () => {
     }
     const raw = await sample.json(buildPrompt(level, topic, POOL), {modelTier: "default", cache: false});
     const items = cleanItems(raw);
-    const need = PER_ROUND * teams;
+    const need = PER_ROUND;
     if(items.length < need){
       setStatus("Only " + items.length + " good sentences came back. Tap Create game to try again.", true);
       return;
     }
-    const game = {id: Date.now().toString(36), level, topic: (raw.title || topic), items};
+    const num = $("num").value.trim();
+    const game = {id: Date.now().toString(36), level, num, topic: (raw.title || topic), items};
     saveGames([game, ...loadGames()]);
     renderRecent();
     setStatus("");
@@ -545,6 +588,28 @@ $("create").onclick = async () => {
   }
 };
 
+/* ---------- sound ---------- */
+let audioCtx = null, soundOn = true;
+try { soundOn = localStorage.getItem("skool-tiles-sound") !== "off"; } catch(e){}
+function initAudio(){
+  if(!audioCtx){ try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+  if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+document.addEventListener("pointerdown", initAudio);
+function beep(final){
+  if(!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "sine"; o.frequency.value = final ? 1175 : 880;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.12, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + (final ? 0.35 : 0.12));
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + 0.4);
+}
+function showSound(){ $("sound").textContent = soundOn ? "🔊" : "🔇"; $("sound").setAttribute("aria-label", soundOn ? "Sound on" : "Sound off"); }
+$("sound").onclick = () => { soundOn = !soundOn; try { localStorage.setItem("skool-tiles-sound", soundOn ? "on" : "off"); } catch(e){} initAudio(); showSound(); };
+showSound();
+
 /* ---------- game ---------- */
 let panels = [], current = null, currentTeams = 2;
 
@@ -553,15 +618,30 @@ function shuffle(a){
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
+// Choose 10 sentences (forms mixed evenly). Every team plays the same 10;
+// the order is picked live so two teams never have the same sentence at once.
 function deal(items, nTeams){
   const groups = {};
   items.forEach(it => (groups[it.group] = groups[it.group] || []).push(it));
   const lists = shuffle(Object.values(groups)).map(shuffle);
   const mixed = [];
   while(lists.some(l => l.length)) lists.forEach(l => { if(l.length) mixed.push(l.shift()); });
-  const hands = Array.from({length:nTeams}, () => []);
-  mixed.forEach((it,k) => hands[k % nTeams].push(it));
-  return hands.map(h => shuffle(h.slice(0, PER_ROUND)));
+  const set = mixed.slice(0, PER_ROUND);
+  return Array.from({length:nTeams}, () => set);
+}
+
+function pickNext(p){
+  const others = panels.filter(o => o !== p);
+  const busy = new Set(others.filter(o => !o.done && o.current).map(o => o.current));
+  const free = p.remaining.filter(it => !busy.has(it));
+  if(!free.length) return null;
+  // prefer sentences the other team has already finished, so nobody gets stuck at the end
+  const safe = free.filter(it => others.every(o => o.doneSet.has(it)));
+  const list = safe.length ? safe : free;
+  // don't bring back a sentence the team just ran out of time on, if there is another one
+  const fresh = list.filter(it => it !== p.lastMissed);
+  const pick = fresh.length ? fresh : list;
+  return pick[Math.floor(Math.random() * pick.length)];
 }
 
 // Older saved games (or answers that missed the Greek) get their Greek added once, then saved
@@ -598,11 +678,13 @@ async function start(game, nTeams){
   board.className = "board" + (nTeams === 2 ? " two" : "");
   board.innerHTML = "";
   const hands = deal(game.items, nTeams);
-  panels = hands.map((items,k) => makePanel(board, T, {
+  panels.forEach(o => o.stop && o.stop());
+  panels = [];
+  hands.forEach((items,k) => panels.push(makePanel(board, T, {
     name: nTeams === 1 ? T.cls : T.team(k+1),
     cls: nTeams === 1 ? "" : "t" + (k+1),
     items
-  }));
+  })));
   window.scrollTo(0,0);
 }
 
@@ -617,6 +699,7 @@ function makePanel(board, T, team){
      <div class="work">
       <p class="label"></p>
       <p class="cue"></p>
+      <div class="timer"><i></i><span></span></div>
       <div class="track empty"></div>
       <div class="tray"></div>
       <p class="feedback"></p>
@@ -631,16 +714,33 @@ function makePanel(board, T, team){
   board.appendChild(el);
   const q = s => el.querySelector(s);
   q(".pname").textContent = team.name;
+  if(team.cls){   // 2 teams: small logo on each team's half
+    const lg = document.createElement("img");
+    lg.className = "plogo"; lg.alt = ""; lg.src = $("logo").src;
+    q(".phead").prepend(lg);
+  }
   q(".pscore span").textContent = T.pts;
   q(".label").textContent = T.use;
   q(".track").dataset.empty = T.empty;
   ["check","clear","hint","skip"].forEach(a => q(`[data-a="${a}"]`).textContent = T[a]);
 
   const p = {name:team.name, cls:team.cls, items:team.items, i:0, score:0, results:[], done:false,
+             remaining:team.items.slice(), doneSet:new Set(), current:null, waiting:false,
+             missedSet:new Set(), lastMissed:null, tick:null, dead:false,
              placed:[], pool:[], tries:0, hinted:false, locked:false};
 
   function load(){
-    const it = p.items[p.i];
+    const it = pickNext(p);
+    if(!it){
+      // the only sentence left is on the other team's screen right now
+      p.waiting = true; p.current = null;
+      q(".work").hidden = true; q(".preview").hidden = false;
+      q(".gk").textContent = "⏳"; q(".count").textContent = T.wait;
+      q(".preview").onclick = null;
+      stopTimer();
+      return;
+    }
+    p.waiting = false; p.current = it;
     p.placed = []; p.tries = 0; p.hinted = false; p.locked = false;
     const tiles = [...it.answer, ...it.extra].map((w,k)=>({id:k,w}));
     let pool = shuffle(tiles), guard = 0;
@@ -657,13 +757,13 @@ function makePanel(board, T, team){
   function showGreek(it){
     const work = q(".work"), pv = q(".preview");
     clearInterval(p.timer);
-    if(!it.greek){ pv.hidden = true; work.hidden = false; return; }
+    if(!it.greek){ pv.hidden = true; work.hidden = false; startTimer(); return; }
     work.hidden = true; pv.hidden = false;
     q(".gk").textContent = it.greek;
     let n = 5;
     const cnt = q(".count");
     cnt.innerHTML = T.think(n);
-    const reveal = () => { clearInterval(p.timer); pv.hidden = true; work.hidden = false; };
+    const reveal = () => { clearInterval(p.timer); pv.hidden = true; work.hidden = false; pv.onclick = null; startTimer(); };
     p.timer = setInterval(() => { n--; if(n <= 0) reveal(); else cnt.innerHTML = T.think(n); }, 1000);
     pv.onclick = reveal;
   }
@@ -777,33 +877,40 @@ function makePanel(board, T, team){
   }
 
   function next(){
+    p.doneSet.add(p.current);
+    p.remaining = p.remaining.filter(x => x !== p.current);
+    p.current = null;
     p.i++;
     if(p.i >= p.items.length){
       p.done = true;
-      q(".body").innerHTML = `<div class="pdone"><p></p><p></p></div>`;
+      const bonus = panels.length > 1 && panels.filter(o => o.done).length === 1;
+      if(bonus) addPoints(20);
+      q(".body").innerHTML = `<div class="pdone"><p></p><p></p><p></p></div>`;
       const ps = q(".pdone").querySelectorAll("p");
-      ps[0].textContent = T.done; ps[1].textContent = p.score + " " + T.pts;
+      ps[0].textContent = T.done; ps[1].textContent = p.score + " " + T.pts; ps[2].textContent = bonus ? T.firstDone : "";
       drawDots();
       checkAllDone(T);
     } else load();
+    panels.forEach(o => { if(o !== p && o.waiting) o.retry(); });
   }
 
   el.addEventListener("click", e => {
     const a = e.target.closest("[data-a]")?.dataset.a;
-    if(!a || p.locked) return;
-    const it = p.items[p.i];
+    if(!a || p.locked || !p.current) return;
+    const it = p.current;
     const track = q(".track");
     if(a === "check"){
       const got = p.placed.map(t=>t.w);
       if(!got.length){ setFb(T.first,"bad"); return; }
       if(got.join("|") === it.answer.join("|")){
-        const pts = (p.tries === 0 && !p.hinted) ? 10 : 5;
+        stopTimer();
+        const pts = (p.tries === 0 && !p.hinted && !p.missedSet.has(it)) ? 10 : 5;
         addPoints(pts);
         p.results[p.i] = "ok"; p.locked = true;
         track.classList.add("ok");
         setFb("✓ " + it.full + "  +" + pts, "ok");
         render();
-        setTimeout(next, 1700);
+        setTimeout(() => { if(!p.dead) next(); }, 1700);
       } else {
         p.tries++;
         track.classList.remove("bad"); void track.offsetWidth; track.classList.add("bad");
@@ -821,14 +928,51 @@ function makePanel(board, T, team){
       p.hinted = true;
       setFb((it.hint ? it.hint + " · " : "") + T.starts(it.answer[0]), "");
     } else if(a === "skip"){
+      stopTimer();
       p.results[p.i] = "skip"; p.locked = true;
       setFb(T.answer + it.full + "  +0", "bad");
       render();
-      setTimeout(next, 2500);
+      setTimeout(() => { if(!p.dead) next(); }, 2500);
     }
   });
 
+  // 30 seconds per sentence; when time runs out the sentence goes back for later
+  const LIMIT = 30;
+  function startTimer(){
+    stopTimer();
+    let left = LIMIT;
+    const box = q(".timer");
+    if(!box) return;
+    const show = () => {
+      box.querySelector("i").style.width = (left / LIMIT * 100) + "%";
+      box.querySelector("span").textContent = left;
+      box.classList.toggle("low", left <= 10);
+    };
+    show();
+    p.tick = setInterval(() => {
+      left--; show();
+      if(left > 0 && left <= 5) beep(false);      // soft beep in the last 5 seconds
+      if(left <= 0){ beep(true); stopTimer(); timeUp(); }
+    }, 1000);
+  }
+  function stopTimer(){ clearInterval(p.tick); p.tick = null; }
+  function timeUp(){
+    if(p.locked || !p.current || p.dead) return;
+    p.locked = true;
+    p.missedSet.add(p.current); p.lastMissed = p.current;
+    setFb(T.timeUp, "bad");
+    render();
+    setTimeout(() => {
+      if(p.dead) return;
+      p.current = null;
+      load();
+      panels.forEach(o => { if(o !== p && o.waiting) o.retry(); });
+    }, 1800);
+  }
+
   load();
+  p.retry = load;
+  p.stop = () => { p.dead = true; stopTimer(); clearInterval(p.timer); };
   return p;
 }
 
@@ -853,6 +997,7 @@ function checkAllDone(T){
 }
 
 function backToSetup(){
+  panels.forEach(o => o.stop && o.stop());
   if(LIBMODE){ showLibrary(); return; }
   $("results").hidden = true; $("board").hidden = true; $("board").innerHTML = "";
   $("newRound").hidden = true; $("setup").hidden = false;
@@ -900,25 +1045,30 @@ function showLibrary(){
   });
   $("libNote").textContent = libLevel ? "" : "Choose your class.";
   const ul = $("libList"); ul.innerHTML = "";
-  if(libLevel) LIBRARY.filter(g => g.level === libLevel).forEach(g => {
+  // highest page/module number first; games without a number at the end
+  const numOf = g => { const n = parseFloat(String(g.num || "").replace(/[^\d.]/g, "")); return isNaN(n) ? -Infinity : n; };
+  if(libLevel) LIBRARY.filter(g => g.level === libLevel).sort((a,b) => numOf(b) - numOf(a)).forEach(g => {
     const li = document.createElement("li"), b = document.createElement("button");
-    b.textContent = g.topic;
-    const fits = g.items.length >= PER_ROUND * libTeams;
-    if(!fits){ b.disabled = true; b.style.opacity = ".45"; b.textContent += "  (1 team only)"; }
-    b.onclick = () => { if(!fits) return; $("library").hidden = true; start(g, libTeams); };
+    if(g.num){
+      const n = document.createElement("span");
+      n.className = "num"; n.textContent = g.num;
+      b.appendChild(n);
+    }
+    b.appendChild(document.createTextNode(g.topic));
+    b.onclick = () => { $("library").hidden = true; start(g, libTeams); };
     li.appendChild(b); ul.appendChild(li);
   });
 }
 
 async function updateStudentPage(){
   const msg = $("updMsg"), btn = $("updBtn");
-  const games = [...loadGames(), EXAMPLE];
+  const games = withExample(loadGames());
   btn.disabled = true;
   try {
     msg.textContent = "Preparing " + games.length + " games…";
     for(const g of games) if(g.items.some(it => !it.greek)) await addGreek(g);
     if(!SOURCE.includes(MARK)){ msg.textContent = "Couldn’t build the student page."; return; }
-    const lib = games.map(g => ({id:g.id, level:g.level, topic:g.topic, items:g.items}));
+    const lib = games.map(g => ({id:g.id, level:g.level, num:g.num || "", topic:g.topic, items:g.items}));
     const html = SOURCE.replace(MARK, () => JSON.stringify(lib).replace(/</g, "\\u003c"));
     const dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
     if(!dl){ msg.textContent = "Saving works when this page is open in Claude."; return; }
@@ -932,7 +1082,7 @@ $("updBtn").onclick = updateStudentPage;
 
 /* ---------- share links ---------- */
 async function packGame(g){
-  const data = JSON.stringify({l:g.level, t:g.topic,
+  const data = JSON.stringify({l:g.level, n:g.num || "", t:g.topic,
     i:g.items.map(it => [it.group, it.cue, it.answer, it.extra, it.full, it.hint, it.greek || ""])});
   const stream = new Blob([new TextEncoder().encode(data)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
   const buf = new Uint8Array(await new Response(stream).arrayBuffer());
@@ -944,7 +1094,7 @@ async function unpackGame(code){
   const buf = Uint8Array.from(bin, c => c.charCodeAt(0));
   const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   const d = JSON.parse(await new Response(stream).text());
-  return {id:"shared", level:d.l, topic:d.t,
+  return {id:"shared", level:d.l, num:d.n || "", topic:d.t,
     items:d.i.map(a => ({group:a[0], cue:a[1], answer:a[2], extra:a[3], full:a[4], hint:a[5], greek:a[6]}))};
 }
 async function openShare(g){
@@ -986,4 +1136,6 @@ $("shareClose").onclick = () => $("shareBox").hidden = true;
     $("setup").innerHTML = '<p class="status bad" style="font-size:1.3rem">This game link doesn’t work. Ask your teacher for a new link.</p>';
   }
 })();
-</script></body></html>
+</script>
+</body>
+</html>
