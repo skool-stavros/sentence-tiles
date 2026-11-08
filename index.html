@@ -107,6 +107,11 @@ button{font:inherit}
 }
 .board.two .tile{font-size:clamp(1rem,1.8vw,1.35rem);padding:.35rem .7rem}
 .tile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--tile-edge)}
+.tile{touch-action:none;user-select:none;-webkit-user-select:none}
+.tile.dragging{opacity:.3}
+.tile.wrong{background:var(--bad);color:#fff;box-shadow:0 4px 0 #7a1f1a}
+.ghost{position:fixed;z-index:50;pointer-events:none;margin:0;transform:scale(1.08) rotate(-2deg);box-shadow:0 12px 24px rgba(0,0,0,.3)!important}
+.marker{width:5px;align-self:stretch;min-height:2.4rem;background:var(--accent);border-radius:3px}
 
 .feedback{min-height:1.8rem;font-size:1.15rem;margin:0 0 .8rem}
 .feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
@@ -235,6 +240,10 @@ button{font:inherit}
   <section class="library" id="library" hidden>
     <h2>Practice games</h2>
     <div class="levels" id="libLevels"></div>
+    <div class="seg" id="libTeams" role="group" aria-label="Number of teams" style="max-width:24rem;margin:0 auto 1.5rem">
+      <button type="button" data-n="1" aria-pressed="true">1 team</button>
+      <button type="button" data-n="2" aria-pressed="false">2 teams</button>
+    </div>
     <p class="libnote" id="libNote"></p>
     <ul id="libList"></ul>
   </section>
@@ -382,11 +391,11 @@ LIBRARY.push({id:EXAMPLE.id, level:EXAMPLE.level, topic:EXAMPLE.topic, items:EXA
 
 /* ---------- labels per language ---------- */
 const UI = {
-  en: {use:"Use these words", empty:"Tap the tiles in the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
-       first:"Put some tiles on the line first.", soFar:"Good so far. Keep going!", wrong:n=>"Not yet! Tile "+n+" is wrong.",
+  en: {use:"Use these words", empty:"Tap or drag the tiles into the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
+       first:"Put some tiles on the line first.", soFar:"Good so far. Keep going!", wrong:n=>"Not yet! Tile "+n+" (red) is wrong. Drag tiles to move them.",
        starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
-  de: {use:"Benutze diese Wörter", empty:"Tippe die Wörter in der richtigen Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
-       first:"Lege zuerst Wörter auf die Linie.", soFar:"Gut so weit. Mach weiter!", wrong:n=>"Noch nicht! Wort "+n+" ist falsch.",
+  de: {use:"Benutze diese Wörter", empty:"Tippe oder ziehe die Wörter in die richtige Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
+       first:"Lege zuerst Wörter auf die Linie.", soFar:"Gut so weit. Mach weiter!", wrong:n=>"Noch nicht! Wort "+n+" (rot) ist falsch. Ziehe die Wörter an die richtige Stelle.",
        starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
 };
 const langOf = level => level.startsWith("D") ? "de" : "en";
@@ -665,8 +674,8 @@ function makePanel(board, T, team){
     const track = q(".track"), tray = q(".tray");
     track.innerHTML = ""; tray.innerHTML = "";
     track.classList.toggle("empty", !p.placed.length);
-    p.placed.forEach(t => track.appendChild(tile(t, () => { p.placed = p.placed.filter(x=>x.id!==t.id); p.pool.push(t); afterMove(); })));
-    p.pool.forEach(t => tray.appendChild(tile(t, () => { p.pool = p.pool.filter(x=>x.id!==t.id); p.placed.push(t); afterMove(); })));
+    p.placed.forEach(t => track.appendChild(tile(t, "track")));
+    p.pool.forEach(t => tray.appendChild(tile(t, "pool")));
     drawDots();
     el.querySelectorAll(".controls .btn").forEach(b => b.disabled = p.locked);
   }
@@ -679,11 +688,85 @@ function makePanel(board, T, team){
       dots.appendChild(d);
     });
   }
-  function tile(t, onTap){
+  // move a tile to the line (at a position) or back to the tray
+  function moveTile(t, to, index){
+    p.placed = p.placed.filter(x => x.id !== t.id);
+    p.pool = p.pool.filter(x => x.id !== t.id);
+    if(to === "track"){
+      if(index == null || index > p.placed.length) index = p.placed.length;
+      p.placed.splice(index, 0, t);
+    } else p.pool.push(t);
+    afterMove();
+  }
+
+  // tap = jump to the other place; drag = drop exactly where you want
+  let drag = null, dragDone = false;
+  function tile(t, where){
     const b = document.createElement("button");
     b.className = "tile"; b.textContent = t.w;
-    b.onclick = () => { if(!p.locked) onTap(); };
+    b.onclick = () => { if(p.locked || dragDone) return; moveTile(t, where === "track" ? "pool" : "track"); };
+    b.addEventListener("pointerdown", e => {
+      if(p.locked || e.button > 0) return;
+      drag = {b, t, x:e.clientX, y:e.clientY, on:false};
+      try { b.setPointerCapture(e.pointerId); } catch(_){}
+    });
+    b.addEventListener("pointermove", dragMove);
+    b.addEventListener("pointerup", dragEnd);
+    b.addEventListener("pointercancel", dragCancel);
     return b;
+  }
+  function dragMove(e){
+    if(!drag) return;
+    if(!drag.on){
+      if(Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
+      drag.on = true;
+      const r = drag.b.getBoundingClientRect(), cs = getComputedStyle(drag.b);
+      drag.dx = drag.x - r.left; drag.dy = drag.y - r.top;
+      const g = drag.b.cloneNode(true);
+      g.classList.add("ghost");
+      g.style.width = r.width + "px"; g.style.fontSize = cs.fontSize; g.style.padding = cs.padding;
+      document.body.appendChild(g);
+      drag.ghost = g;
+      drag.b.classList.add("dragging");
+      drag.marker = document.createElement("span");
+      drag.marker.className = "marker";
+    }
+    drag.ghost.style.left = (e.clientX - drag.dx) + "px";
+    drag.ghost.style.top = (e.clientY - drag.dy) + "px";
+    const track = q(".track"), tray = q(".tray");
+    const inside = el => { const r = el.getBoundingClientRect();
+      return e.clientX >= r.left - 12 && e.clientX <= r.right + 12 && e.clientY >= r.top - 12 && e.clientY <= r.bottom + 12; };
+    if(inside(track)){
+      drag.over = "track";
+      const tiles = [...track.querySelectorAll(".tile")].filter(x => x !== drag.b);
+      let idx = tiles.length;
+      for(let i = 0; i < tiles.length; i++){
+        const r = tiles[i].getBoundingClientRect();
+        if(e.clientY < r.top || (e.clientY <= r.bottom && e.clientX < r.left + r.width / 2)){ idx = i; break; }
+      }
+      drag.idx = idx;
+      if(idx < tiles.length) track.insertBefore(drag.marker, tiles[idx]); else track.appendChild(drag.marker);
+      track.classList.remove("empty");
+    } else {
+      drag.marker.remove();
+      drag.over = inside(tray) ? "pool" : null;
+      drag.idx = null;
+    }
+  }
+  function dragEnd(){
+    if(!drag) return;
+    const d = drag; drag = null;
+    if(!d.on) return;                       // it was a tap: the click handler moves it
+    dragDone = true; setTimeout(() => dragDone = false, 50);
+    d.ghost.remove(); d.marker.remove();
+    if(d.over === "track") moveTile(d.t, "track", d.idx);
+    else if(d.over === "pool") moveTile(d.t, "pool");
+    else render();
+  }
+  function dragCancel(){
+    if(!drag) return;
+    const d = drag; drag = null;
+    if(d.on){ d.ghost.remove(); d.marker.remove(); render(); }
   }
   function afterMove(){ q(".track").classList.remove("bad","ok"); setFb(""); render(); }
   function setFb(msg, cls){ const f = q(".feedback"); f.textContent = msg; f.className = "feedback " + (cls||""); }
@@ -728,7 +811,11 @@ function makePanel(board, T, team){
         track.classList.remove("bad"); void track.offsetWidth; track.classList.add("bad");
         let k = 0; while(k<got.length && got[k]===it.answer[k]) k++;
         if(k===got.length && got.length<it.answer.length) setFb(T.soFar,"bad");
-        else setFb(T.wrong(k+1),"bad");
+        else {
+          setFb(T.wrong(k+1),"bad");
+          const wt = track.querySelectorAll(".tile")[k];
+          if(wt) wt.classList.add("wrong");
+        }
       }
     } else if(a === "clear"){
       p.pool.push(...p.placed); p.placed = []; afterMove();
@@ -779,7 +866,12 @@ $("again").onclick = backToSetup;
 $("replay").onclick = () => start(current, currentTeams);
 $("gram").addEventListener("keydown", e => { if(e.key === "Enter") $("create").click(); });
 /* ---------- student library ---------- */
-let libLevel = null;
+let libLevel = null, libTeams = 1;
+document.querySelectorAll("#libTeams button").forEach(b => b.onclick = () => {
+  libTeams = +b.dataset.n;
+  document.querySelectorAll("#libTeams button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  showLibrary();
+});
 function showLibrary(){
   LIBMODE = true; SHARED = true;
   $("setup").hidden = true; $("results").hidden = true;
@@ -791,6 +883,10 @@ function showLibrary(){
   const order = [...$("lvl").options].map(o => o.value);
   const levels = [...new Set(LIBRARY.map(g => g.level))].sort((a,b) => order.indexOf(a) - order.indexOf(b));
   if(!libLevel){ try { libLevel = localStorage.getItem("skool-tiles-level"); } catch(e){} }
+  // a class link (…/sentence-tiles/?class=EB) opens that class only
+  const fixed = (new URLSearchParams(location.search).get("class") || "").toUpperCase();
+  if(levels.includes(fixed)) libLevel = fixed;
+  $("libLevels").hidden = levels.includes(fixed);
   if(!levels.includes(libLevel)) libLevel = levels.length === 1 ? levels[0] : null;
   const lv = $("libLevels"); lv.innerHTML = "";
   levels.forEach(l => {
@@ -804,7 +900,9 @@ function showLibrary(){
   if(libLevel) LIBRARY.filter(g => g.level === libLevel).forEach(g => {
     const li = document.createElement("li"), b = document.createElement("button");
     b.textContent = g.topic;
-    b.onclick = () => { $("library").hidden = true; start(g, 1); };
+    const fits = g.items.length >= PER_ROUND * libTeams;
+    if(!fits){ b.disabled = true; b.style.opacity = ".45"; b.textContent += "  (1 team only)"; }
+    b.onclick = () => { if(!fits) return; $("library").hidden = true; start(g, libTeams); };
     li.appendChild(b); ul.appendChild(li);
   });
 }
