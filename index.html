@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head><!-- frame-runtime --><!-- /frame-runtime -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SKooL Sentence Tiles</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&amp;display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#E6EDF5; --surface:#FFFFFF; --ink:#14213D; --muted:#3E4C66;
@@ -189,9 +188,9 @@ button{font:inherit}
 <body>
 <div class="wrap">
   <div class="top">
-    <h1 id="topic">Sentence Tiles</h1><span class="level" id="level" hidden></span>
+    <h1 id="topic">Sentence Tiles</h1><span class="level" id="level" hidden=""></span>
     <span class="spacer"></span>
-    <button class="btn" id="newRound" hidden>New game</button>
+    <button class="btn" id="newRound" hidden="">New game</button>
   </div>
 
   <section class="setup" id="setup">
@@ -200,7 +199,7 @@ button{font:inherit}
         <label for="lvl">Level</label>
         <select id="lvl">
           <optgroup label="English">
-            <option>EJAB</option><option>EA</option><option selected>EB</option>
+            <option>EJAB</option><option>EA</option><option selected="">EB</option>
             <option>EA1</option><option>EA2</option><option>EB1</option><option>EB12</option>
             <option>EB2</option><option>EC1</option><option>EC12</option><option>EC2</option>
           </optgroup>
@@ -237,7 +236,7 @@ button{font:inherit}
     </div>
   </section>
 
-  <section class="library" id="library" hidden>
+  <section class="library" id="library" hidden="">
     <h2>Practice games</h2>
     <div class="levels" id="libLevels"></div>
     <div class="seg" id="libTeams" role="group" aria-label="Number of teams" style="max-width:24rem;margin:0 auto 1.5rem">
@@ -248,24 +247,24 @@ button{font:inherit}
     <ul id="libList"></ul>
   </section>
 
-  <section class="board" id="board" hidden></section>
+  <section class="board" id="board" hidden=""></section>
 </div>
 
-<div class="results" id="shareBox" hidden>
+<div class="results" id="shareBox" hidden="">
   <div class="rcard">
     <h2>Link for students</h2>
     <p class="sharenote" id="shareTopic"></p>
-    <textarea id="shareLink" readonly rows="4" aria-label="Game link"></textarea>
+    <textarea id="shareLink" readonly="" rows="4" aria-label="Game link"></textarea>
     <div class="controls">
       <button class="btn primary" id="shareCopy">Copy link</button>
-      <button class="btn" id="shareSend" hidden>Send…</button>
+      <button class="btn" id="shareSend" hidden="">Send…</button>
       <button class="btn" id="shareClose">Close</button>
     </div>
     <p class="sharenote" id="shareMsg">Students play on their own: 10 sentences, with the Greek preview and points. No Claude account needed.</p>
   </div>
 </div>
 
-<div class="results" id="results" hidden>
+<div class="results" id="results" hidden="">
   <div class="rcard">
     <h2 id="rtitle"></h2>
     <div id="rrows"></div>
@@ -286,7 +285,7 @@ const SOURCE = (() => {
   } catch(e){ return ""; }
 })();
 const MARK = "[/*LIB" + "RARY*/]";
-const LIBRARY = [/*LIBRARY*/];   // games built into the student page
+const LIBRARY = [{"id":"mw871wf0","level":"DA","topic":"Present tense of sein (to be)","items":[{"group":"ich bin","cue":"👦 ich · sein · acht Jahre alt","answer":["Ich","bin","acht","Jahre","alt"],"extra":["ist","bist","sind"],"full":"Ich bin acht Jahre alt.","greek":"Είμαι οκτώ χρονών.","hint":"ich → bin"},{"group":"du bist","cue":"🧒 du · sein · mein Freund","answer":["Du","bist","mein","Freund"],"extra":["bin","ist","seid"],"full":"Du bist mein Freund.","greek":"Είσαι ο φίλος μου.","hint":"du → bist"},{"group":"er/sie/es ist","cue":"🐱 die Katze · sein · klein","answer":["Die","Katze","ist","klein"],"extra":["sind","bist","bin"],"full":"Die Katze ist klein.","greek":"Η γάτα είναι μικρή.","hint":"er/sie/es → ist"},{"group":"wir sind","cue":"👫 wir · sein · in der Schule","answer":["Wir","sind","in","der","Schule"],"extra":["seid","ist","bin"],"full":"Wir sind in der Schule.","greek":"Είμαστε στο σχολείο.","hint":"wir → sind"},{"group":"ihr seid","cue":"👧👦 ihr · sein · laut","answer":["Ihr","seid","laut"],"extra":["sind","bist","ist"],"full":"Ihr seid laut.","greek":"Είστε δυνατοί (φωνακλάδες).","hint":"ihr → seid"},{"group":"sie/Sie sind","cue":"🐶 die Hunde · sein · groß","answer":["Die","Hunde","sind","groß"],"extra":["ist","seid","bin"],"full":"Die Hunde sind groß.","greek":"Τα σκυλιά είναι μεγάλα.","hint":"sie (viele) → sind"},{"group":"ich bin","cue":"😊 ich · sein · heute · glücklich","answer":["Ich","bin","heute","glücklich"],"extra":["ist","bist","sind"],"full":"Ich bin heute glücklich.","greek":"Σήμερα είμαι χαρούμενος.","hint":"ich → bin"},{"group":"du bist","cue":"❓ wo · du · sein","answer":["Wo","bist","du","?"],"extra":["bin","ist","seid"],"full":"Wo bist du?","greek":"Πού είσαι;","hint":"du → bist"},{"group":"er/sie/es ist","cue":"🍎 der Apfel · sein · rot","answer":["Der","Apfel","ist","rot"],"extra":["sind","bist","seid"],"full":"Der Apfel ist rot.","greek":"Το μήλο είναι κόκκινο.","hint":"er/sie/es → ist"},{"group":"wir sind","cue":"⚽ wir · sein · Freunde","answer":["Wir","sind","Freunde"],"extra":["seid","ist","bin"],"full":"Wir sind Freunde.","greek":"Είμαστε φίλοι.","hint":"wir → sind"}]},{"id":"example","level":"EB","topic":"Present simple or continuous?","items":[{"group":"simple","cue":"⚽ I · play football · every day","answer":["I","play","football","every day"],"extra":["playing","plays","am"],"full":"I play football every day.","hint":"Present simple — every day, always, on Mondays","greek":"Παίζω ποδόσφαιρο κάθε μέρα."},{"group":"simple","cue":"☕ my mum · drink coffee · every morning","answer":["my mum","drinks","coffee","every morning"],"extra":["drink","drinking","is"],"full":"My mum drinks coffee every morning.","hint":"Present simple — every day, always, on Mondays","greek":"Η μαμά μου πίνει καφέ κάθε πρωί."},{"group":"simple","cue":"🥛 Tom · not like · milk","answer":["Tom","doesn't","like","milk"],"extra":["don't","likes","isn't"],"full":"Tom doesn't like milk.","hint":"Present simple — every day, always, on Mondays","greek":"Στον Τομ δεν αρέσει το γάλα."},{"group":"simple","cue":"🏊 she · swim · on Saturdays","answer":["she","swims","on Saturdays"],"extra":["swim","swimming","is"],"full":"She swims on Saturdays.","hint":"Present simple — every day, always, on Mondays","greek":"Αυτή κολυμπάει τα Σάββατα."},{"group":"simple","cue":"🥕 your dog · eat carrots?","answer":["does","your dog","eat","carrots","?"],"extra":["do","eats","is"],"full":"Does your dog eat carrots?","hint":"Present simple — every day, always, on Mondays","greek":"Τρώει καρότα ο σκύλος σου;"},{"group":"simple","cue":"🚌 we · go to school · by bus","answer":["we","go","to school","by bus"],"extra":["goes","going","are"],"full":"We go to school by bus.","hint":"Present simple — every day, always, on Mondays","greek":"Πηγαίνουμε στο σχολείο με το λεωφορείο."},{"group":"simple","cue":"⏰ my brother · get up · at seven o'clock","answer":["my brother","gets up","at seven o'clock"],"extra":["get up","getting up","is"],"full":"My brother gets up at seven o'clock.","hint":"Present simple — every day, always, on Mondays","greek":"Ο αδερφός μου σηκώνεται στις επτά."},{"group":"simple","cue":"📺 they · not watch TV · in the morning","answer":["they","don't","watch","TV","in the morning"],"extra":["doesn't","watching","aren't"],"full":"They don't watch TV in the morning.","hint":"Present simple — every day, always, on Mondays","greek":"Δεν βλέπουν τηλεόραση το πρωί."},{"group":"simple","cue":"🏠 where · Anna · live?","answer":["where","does","Anna","live","?"],"extra":["do","lives","is"],"full":"Where does Anna live?","hint":"Present simple — every day, always, on Mondays","greek":"Πού μένει η Άννα;"},{"group":"simple","cue":"🐟 my cat · love · fish","answer":["my cat","loves","fish"],"extra":["love","loving","is"],"full":"My cat loves fish.","hint":"Present simple — every day, always, on Mondays","greek":"Η γάτα μου λατρεύει το ψάρι."},{"group":"cont","cue":"🐱 Look! · the cat · sleep","answer":["Look!","the cat","is","sleeping"],"extra":["sleeps","sleep","are"],"full":"Look! The cat is sleeping.","hint":"Present continuous — am / is / are + -ing","greek":"Κοίτα! Η γάτα κοιμάται."},{"group":"cont","cue":"🍕 we · eat pizza · now","answer":["we","are","eating","pizza","now"],"extra":["eat","is","eats"],"full":"We are eating pizza now.","hint":"Present continuous — am / is / are + -ing","greek":"Τρώμε πίτσα τώρα."},{"group":"cont","cue":"🎤 the children · sing · at the moment","answer":["the children","are","singing","at the moment"],"extra":["is","sing","sings"],"full":"The children are singing at the moment.","hint":"Present continuous — am / is / are + -ing","greek":"Τα παιδιά τραγουδάνε αυτή τη στιγμή."},{"group":"cont","cue":"📺 I · not watch TV · now","answer":["I","am","not","watching","TV","now"],"extra":["watch","don't","is"],"full":"I am not watching TV now.","hint":"Present continuous — am / is / are + -ing","greek":"Δεν βλέπω τηλεόραση τώρα."},{"group":"cont","cue":"🤔 what · you · do · now?","answer":["what","are","you","doing","now","?"],"extra":["do","does","is"],"full":"What are you doing now?","hint":"Present continuous — am / is / are + -ing","greek":"Τι κάνεις τώρα;"},{"group":"cont","cue":"👶 Listen! · the baby · cry","answer":["Listen!","the baby","is","crying"],"extra":["cries","are","cry"],"full":"Listen! The baby is crying.","hint":"Present continuous — am / is / are + -ing","greek":"Άκου! Το μωρό κλαίει."},{"group":"cont","cue":"🍝 Dad · cook dinner · now","answer":["Dad","is","cooking","dinner","now"],"extra":["cooks","are","cook"],"full":"Dad is cooking dinner now.","hint":"Present continuous — am / is / are + -ing","greek":"Ο μπαμπάς μαγειρεύει βραδινό τώρα."},{"group":"cont","cue":"🌳 they · play in the garden · now?","answer":["are","they","playing","in the garden","now","?"],"extra":["is","play","do"],"full":"Are they playing in the garden now?","hint":"Present continuous — am / is / are + -ing","greek":"Παίζουν στον κήπο τώρα;"},{"group":"cont","cue":"📖 my sister · not read a book · at the moment","answer":["my sister","isn't","reading","a book","at the moment"],"extra":["doesn't","reads","read"],"full":"My sister isn't reading a book at the moment.","hint":"Present continuous — am / is / are + -ing","greek":"Η αδερφή μου δεν διαβάζει βιβλίο αυτή τη στιγμή."},{"group":"cont","cue":"🌧️ Look! · it · rain","answer":["Look!","it","is","raining"],"extra":["rains","rain","are"],"full":"Look! It is raining.","hint":"Present continuous — am / is / are + -ing","greek":"Κοίτα! Βρέχει."}]}];   // games built into the student page
 let LIBMODE = false;
 const PER_ROUND = 10;
 const STORE = "skool-tiles-games";
@@ -387,7 +386,6 @@ const EXAMPLE = {
      full:"Look! It is raining."}
   ]).map(it => ({group: it.t, cue: it.cue, answer: it.answer, extra: it.extra, full: it.full, hint: EX_HINTS[it.t], greek: EX_GREEK[it.full] || ""}))
 };
-LIBRARY.push({id:EXAMPLE.id, level:EXAMPLE.level, topic:EXAMPLE.topic, items:EXAMPLE.items});
 
 /* ---------- labels per language ---------- */
 const UI = {
@@ -988,6 +986,4 @@ $("shareClose").onclick = () => $("shareBox").hidden = true;
     $("setup").innerHTML = '<p class="status bad" style="font-size:1.3rem">This game link doesn’t work. Ask your teacher for a new link.</p>';
   }
 })();
-</script>
-</body>
-</html>
+</script></body></html>
