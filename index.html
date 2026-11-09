@@ -131,7 +131,22 @@ button{font:inherit}
 
 /* results */
 .results{position:fixed;inset:0;background:var(--shade);display:grid;place-items:center;padding:1rem;z-index:20}
-.rcard{background:var(--surface);border-radius:20px;padding:2rem;max-width:34rem;width:100%;text-align:center}
+.rcard{background:var(--surface);border-radius:20px;padding:2rem;max-width:34rem;width:100%;text-align:center;max-height:92vh;overflow:auto}
+.rrow small{display:block;font-size:.95rem;color:var(--muted);font-weight:400}
+.rsave{margin:1.2rem 0 0;display:grid;gap:.5rem}
+.rsave input{width:100%;font:inherit;font-size:1.15rem;padding:.55rem .8rem;border-radius:12px;border:3px solid var(--track);background:var(--bg);color:var(--ink)}
+.rsave input:focus{border-color:var(--accent);outline:none}
+.rsave .btn{--team:var(--accent)}
+.lb{margin:1.2rem 0 0;text-align:left}
+.lb h3{font-size:1.2rem;margin:0 0 .5rem;text-align:center}
+.lb ol{margin:0;padding:0;list-style:none;display:grid;gap:.3rem}
+.lb li{display:grid;grid-template-columns:2rem 1fr auto auto;gap:.6rem;align-items:center;padding:.4rem .6rem;border-radius:10px;background:var(--bg);font-size:1.1rem}
+.lb li.new{outline:3px solid var(--ok)}
+.lb .rk{text-align:center}
+.lb .tm{color:var(--muted);font-weight:400;font-size:.95rem}
+.lb .empty{text-align:center;color:var(--muted);font-weight:400}
+.trophy{border:2px solid var(--track);background:var(--surface);color:var(--ink);border-radius:12px;font-size:1.1rem;padding:0 .7rem;cursor:pointer;flex:none}
+#libList li{display:flex;gap:.5rem}
 .rcard h2{font-size:2rem;margin:0 0 1rem}
 .rrow{display:flex;justify-content:space-between;font-size:1.5rem;padding:.5rem 0;border-bottom:2px solid var(--track)}
 .rrow.t1{color:var(--t1)} .rrow.t2{color:var(--t2)}
@@ -243,7 +258,7 @@ button{font:inherit}
       <button class="go" id="create">Create game</button>
       <p class="status" id="status" aria-live="polite"></p>
     </div>
-    <div class="rules">10 sentences per game (with 2 teams, both teams get the same 10 in a different order) · 3 trap tiles in each · correct first time: 10 points · after a mistake or a hint: 5 · skip: 0 · 30 seconds per sentence (missed ones come back later, for 5 points) · first team to finish: +20</div>
+    <div class="rules">10 sentences per game (with 2 teams, both teams get the same 10 in a different order) · 3 trap tiles in each · correct first time: 10 points · after a mistake or a hint: 5 · skip: 0 · 30 seconds per sentence (missed ones come back later, for 5 points) · speed multiplier: the faster a team finishes, the more its points are multiplied (up to ×2) · first team to finish: +20 · a leaderboard for each game</div>
 
     <div class="recent" id="recentBox">
       <h3>Play a saved game</h3>
@@ -283,10 +298,20 @@ button{font:inherit}
   </div>
 </div>
 
+<div class="results" id="lbBox" hidden>
+  <div class="rcard">
+    <h2 id="lbTitle"></h2>
+    <div id="lbList"></div>
+    <div class="controls"><button class="btn primary" id="lbClose" style="--team:var(--accent)">Close</button></div>
+  </div>
+</div>
+
 <div class="results" id="results" hidden>
   <div class="rcard">
     <h2 id="rtitle"></h2>
     <div id="rrows"></div>
+    <div id="rsave" class="rsave"></div>
+    <div id="rboard"></div>
     <div class="controls">
       <button class="btn primary" id="replay">Play again</button>
       <button class="btn" id="again">New game</button>
@@ -411,10 +436,10 @@ LIBRARY.push({id:EXAMPLE.id, level:EXAMPLE.level, topic:EXAMPLE.topic, items:EXA
 const UI = {
   en: {use:"Use these words", empty:"Tap or drag the tiles into the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
        first:"Put some tiles on the line first.", soFar:"Good so far. Keep going!", wrong:n=>"Not yet! Tile "+n+" (red) is wrong. Drag tiles to move them.",
-       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, wait:"Waiting for the other team to finish this sentence…", timeUp:"⏰ Time’s up! This sentence comes back later.", firstDone:"🏁 First to finish! +20 bonus", think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
+       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, wait:"Waiting for the other team to finish this sentence…", timeUp:"⏰ Time’s up! This sentence comes back later.", firstDone:"🏁 First to finish! +20 bonus", speed:"speed", time:"time", saveLb:"Save to leaderboard", nameFor:n=>"Name(s) for "+n, lbTitle:"🏆 Leaderboard", lbEmpty:"No scores yet. Be the first!", saved:"Saved ✓", think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
   de: {use:"Benutze diese Wörter", empty:"Tippe oder ziehe die Wörter in die richtige Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
        first:"Lege zuerst Wörter auf die Linie.", soFar:"Gut so weit. Mach weiter!", wrong:n=>"Noch nicht! Wort "+n+" (rot) ist falsch. Ziehe die Wörter an die richtige Stelle.",
-       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, wait:"Warte, bis das andere Team diesen Satz fertig hat…", timeUp:"⏰ Die Zeit ist um! Dieser Satz kommt später wieder.", firstDone:"🏁 Als Erste fertig! +20 Bonus", think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
+       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, wait:"Warte, bis das andere Team diesen Satz fertig hat…", timeUp:"⏰ Die Zeit ist um! Dieser Satz kommt später wieder.", firstDone:"🏁 Als Erste fertig! +20 Bonus", speed:"Tempo", time:"Zeit", saveLb:"In die Bestenliste", nameFor:n=>"Name(n) für "+n, lbTitle:"🏆 Bestenliste", lbEmpty:"Noch keine Ergebnisse. Sei die/der Erste!", saved:"Gespeichert ✓", think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
 };
 const langOf = level => level.startsWith("D") ? "de" : "en";
 
@@ -451,6 +476,10 @@ function renderRecent(){
       start(g, teams);
     };
     li.appendChild(b);
+    const tr = document.createElement("button");
+    tr.className = "trophy"; tr.textContent = "🏆"; tr.setAttribute("aria-label","Leaderboard for " + g.topic);
+    tr.onclick = () => openLb(g);
+    li.appendChild(tr);
     const sh = document.createElement("button");
     sh.className = "share"; sh.textContent = "🔗 Share"; sh.setAttribute("aria-label","Share " + g.topic + " with students");
     sh.onclick = () => openShare(g);
@@ -469,6 +498,7 @@ function renderRecent(){
         clearTimeout(armed);
         if(g.example){ try { localStorage.setItem(HIDE_EX, "1"); } catch(e){} }
         else saveGames(loadGames().filter(x => x.id !== g.id));
+        deleteLb(g.id);
         renderRecent();
       };
       li.appendChild(d);
@@ -726,7 +756,7 @@ function makePanel(board, T, team){
 
   const p = {name:team.name, cls:team.cls, items:team.items, i:0, score:0, results:[], done:false,
              remaining:team.items.slice(), doneSet:new Set(), current:null, waiting:false,
-             missedSet:new Set(), lastMissed:null, tick:null, dead:false,
+             missedSet:new Set(), lastMissed:null, tick:null, dead:false, secs:0, final:0, mult:1, bonus:0,
              placed:[], pool:[], tries:0, hinted:false, locked:false};
 
   function load(){
@@ -884,10 +914,15 @@ function makePanel(board, T, team){
     if(p.i >= p.items.length){
       p.done = true;
       const bonus = panels.length > 1 && panels.filter(o => o.done).length === 1;
-      if(bonus) addPoints(20);
+      p.mult = speedMult(p.secs, p.items.length);
+      p.bonus = bonus ? 20 : 0;
+      p.final = Math.round(p.score * p.mult) + p.bonus;
+      q(".pscore b").textContent = p.final;
       q(".body").innerHTML = `<div class="pdone"><p></p><p></p><p></p></div>`;
       const ps = q(".pdone").querySelectorAll("p");
-      ps[0].textContent = T.done; ps[1].textContent = p.score + " " + T.pts; ps[2].textContent = bonus ? T.firstDone : "";
+      ps[0].textContent = T.done + "  " + p.final + " " + T.pts;
+      ps[1].textContent = p.score + " × " + p.mult.toFixed(1) + " (" + T.speed + ", " + fmtTime(p.secs) + ")";
+      ps[2].textContent = bonus ? T.firstDone : "";
       drawDots();
       checkAllDone(T);
     } else load();
@@ -950,7 +985,7 @@ function makePanel(board, T, team){
     };
     show();
     p.tick = setInterval(() => {
-      left--; show();
+      left--; p.secs++; show();
       if(left > 0 && left <= 5) beep(false);      // soft beep in the last 5 seconds
       if(left <= 0){ beep(true); stopTimer(); timeUp(); }
     }, 1000);
@@ -976,6 +1011,43 @@ function makePanel(board, T, team){
   return p;
 }
 
+// speed multiplier: 30 s per sentence is the limit; finishing in no time would be ×2
+function speedMult(secs, n){
+  const limit = 30 * n;
+  return Math.max(1, Math.min(2, Math.round((1 + (limit - secs) / limit) * 10) / 10));
+}
+function fmtTime(secs){ return Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0"); }
+
+/* ---------- leaderboards (one per game, deleted with the game) ---------- */
+const LB = "skool-tiles-lb:";
+function loadLb(id){ try { return JSON.parse(localStorage.getItem(LB + id)) || []; } catch(e){ return []; } }
+function saveLb(id, list){ try { localStorage.setItem(LB + id, JSON.stringify(list.slice(0, 20))); } catch(e){} }
+function deleteLb(id){ try { localStorage.removeItem(LB + id); } catch(e){} }
+function drawLb(box, id, T, highlight){
+  const list = loadLb(id);
+  box.innerHTML = '<div class="lb"><h3></h3><ol></ol></div>';
+  box.querySelector("h3").textContent = T.lbTitle;
+  const ol = box.querySelector("ol");
+  if(!list.length){ const li = document.createElement("li"); li.className = "empty"; li.style.display = "block"; li.textContent = T.lbEmpty; ol.appendChild(li); return; }
+  list.slice(0, 10).forEach((e, k) => {
+    const li = document.createElement("li");
+    if(highlight && highlight.includes(e.at)) li.className = "new";
+    li.innerHTML = '<span class="rk"></span><span></span><span class="tm"></span><b></b>';
+    li.children[0].textContent = ["🥇","🥈","🥉"][k] || (k + 1);
+    li.children[1].textContent = e.name;
+    li.children[2].textContent = fmtTime(e.secs);
+    li.children[3].textContent = e.score;
+    ol.appendChild(li);
+  });
+}
+function openLb(g){
+  const T = UI[langOf(g.level)];
+  $("lbTitle").textContent = g.level + (g.num ? " · " + g.num : "") + " · " + g.topic;
+  drawLb($("lbList"), g.id, T);
+  $("lbBox").hidden = false;
+}
+$("lbClose").onclick = () => $("lbBox").hidden = true;
+
 function checkAllDone(T){
   if(!panels.every(p => p.done)) return;
   const rows = $("rrows"); rows.innerHTML = "";
@@ -984,15 +1056,42 @@ function checkAllDone(T){
     r.className = "rrow " + p.cls;
     r.innerHTML = "<span></span><span></span>";
     r.children[0].textContent = p.name;
-    r.children[1].textContent = p.score + " " + T.pts;
+    r.children[1].innerHTML = "<b></b><small></small>";
+    r.children[1].querySelector("b").textContent = p.final + " " + T.pts;
+    r.children[1].querySelector("small").textContent =
+      p.score + " × " + p.mult.toFixed(1) + (p.bonus ? " + " + p.bonus : "") + " · " + fmtTime(p.secs);
     rows.appendChild(r);
   });
   let title = T.well;
   if(panels.length === 2){
     const [a,b] = panels;
-    title = a.score === b.score ? T.draw : T.wins(a.score > b.score ? a.name : b.name);
+    title = a.final === b.final ? T.draw : T.wins(a.final > b.final ? a.name : b.name);
   }
   $("rtitle").textContent = title;
+
+  // names for the leaderboard
+  const gameId = current.id;
+  const save = $("rsave"); save.innerHTML = ""; save.hidden = false;
+  const inputs = panels.map(p => {
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.maxLength = 40; inp.placeholder = T.nameFor(p.name);
+    inp.setAttribute("aria-label", T.nameFor(p.name));
+    save.appendChild(inp);
+    return inp;
+  });
+  const btn = document.createElement("button");
+  btn.className = "btn primary"; btn.textContent = T.saveLb;
+  btn.onclick = () => {
+    const now = Date.now();
+    const added = panels.map((p, k) => ({name: inputs[k].value.trim() || p.name, score: p.final, secs: p.secs, at: now + k}));
+    const list = [...loadLb(gameId), ...added].sort((x, y) => y.score - x.score || x.secs - y.secs);
+    saveLb(gameId, list);
+    save.innerHTML = "";
+    const ok = document.createElement("p"); ok.className = "sharenote"; ok.textContent = T.saved; save.appendChild(ok);
+    drawLb($("rboard"), gameId, T, added.map(a => a.at));
+  };
+  save.appendChild(btn);
+  drawLb($("rboard"), gameId, T);
   setTimeout(() => $("results").hidden = false, 900);
 }
 
@@ -1016,6 +1115,11 @@ document.querySelectorAll("#libTeams button").forEach(b => b.onclick = () => {
   showLibrary();
 });
 function showLibrary(){
+  // games removed from the student page lose their leaderboards too
+  try {
+    const ids = new Set(LIBRARY.map(g => LB + g.id));
+    Object.keys(localStorage).filter(k => k.startsWith(LB) && !k.startsWith(LB + "shared-") && !ids.has(k)).forEach(k => localStorage.removeItem(k));
+  } catch(e){}
   LIBMODE = true; SHARED = true;
   $("setup").hidden = true; $("results").hidden = true;
   $("board").hidden = true; $("board").innerHTML = "";
@@ -1056,7 +1160,10 @@ function showLibrary(){
     }
     b.appendChild(document.createTextNode(g.topic));
     b.onclick = () => { $("library").hidden = true; start(g, libTeams); };
-    li.appendChild(b); ul.appendChild(li);
+    const tr = document.createElement("button");
+    tr.className = "trophy"; tr.textContent = "🏆"; tr.setAttribute("aria-label","Leaderboard");
+    tr.onclick = () => openLb(g);
+    li.appendChild(b); li.appendChild(tr); ul.appendChild(li);
   });
 }
 
@@ -1094,7 +1201,7 @@ async function unpackGame(code){
   const buf = Uint8Array.from(bin, c => c.charCodeAt(0));
   const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   const d = JSON.parse(await new Response(stream).text());
-  return {id:"shared", level:d.l, num:d.n || "", topic:d.t,
+  return {id:"shared-" + d.l + "-" + d.t, level:d.l, num:d.n || "", topic:d.t,
     items:d.i.map(a => ({group:a[0], cue:a[1], answer:a[2], extra:a[3], full:a[4], hint:a[5], greek:a[6]}))};
 }
 async function openShare(g){
