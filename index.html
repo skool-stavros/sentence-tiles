@@ -158,6 +158,7 @@ button{font:inherit}
 .board.two .gk{font-size:clamp(1.35rem,2.5vw,2.1rem)}
 .count{color:var(--muted);font-size:1.2rem;margin:0}
 .count b{color:var(--team, var(--accent));font-size:1.6rem}
+.pausebtn{margin-top:1.1rem;font-size:1.25rem;padding:.6rem 1.4rem}
 /* library */
 .library{max-width:44rem;margin:1.5rem auto}
 .library h2{font-size:clamp(1.6rem,4vw,2.3rem);margin:0 0 1rem;text-align:center}
@@ -179,7 +180,8 @@ button{font:inherit}
 .top .logo{height:56px;width:auto;border-radius:10px;background:#fff;display:block;flex:none}
 .plogo{height:34px;width:auto;border-radius:6px;background:#fff;display:block;flex:none}
 @media (max-width:600px){ .top .logo{height:42px} .plogo{height:26px} }
-#sound{--team:var(--accent);padding:.45rem .7rem}
+#sound,#music{--team:var(--accent);padding:.45rem .7rem}
+#music.off{opacity:.4}
 /* timer */
 .timer{position:relative;height:1.8rem;border-radius:9px;background:var(--track);margin:0 0 .7rem;overflow:hidden}
 .timer i{position:absolute;top:0;bottom:0;left:0;background:var(--team, var(--accent));transition:width 1s linear;opacity:.8}
@@ -203,9 +205,12 @@ button{font:inherit}
 .recent{margin-top:1.6rem;text-align:left}
 .recent h3{font-size:1.15rem;margin:0 0 .6rem;color:var(--muted)}
 .recent ul{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
-.recent li{display:flex;gap:.5rem}
-.recent .play{flex:1;text-align:left;font-size:1.05rem;padding:.6rem .8rem;border-radius:12px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer}
+.recent li{display:flex;flex-wrap:wrap;gap:.5rem;padding:.6rem;border-radius:14px;border:2px solid var(--track);background:var(--surface)}
+.recent li.fresh{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok)}
+.recent .play{flex:1 1 100%;text-align:left;font-size:1.1rem;padding:.2rem .3rem;color:var(--ink)}
 .recent .play span{color:var(--muted);font-weight:400}
+.recent .startbtn{font-size:1.05rem;padding:.5rem .9rem;border-radius:12px;border:none;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.recent .actions-gap{flex:1}
 .recent .del{border:2px solid var(--track);background:transparent;color:var(--muted);font-size:1rem;cursor:pointer;padding:0 .7rem;border-radius:12px;white-space:nowrap}
 .recent .del.armed{background:var(--bad);border-color:var(--bad);color:#fff}
 .spin{display:inline-block;width:1rem;height:1rem;border:3px solid var(--track);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;vertical-align:-2px;margin-right:.4rem}
@@ -221,6 +226,7 @@ button{font:inherit}
     <span class="spacer"></span>
     <button class="btn" id="newRound" hidden>New game</button>
     <button class="btn" id="sound" aria-label="Sound on">🔊</button>
+    <button class="btn" id="music" aria-label="Music on">🎵</button>
   </div>
 
   <section class="setup" id="setup">
@@ -240,7 +246,7 @@ button{font:inherit}
           </optgroup>
         </select>
       </div>
-      <div class="field">
+      <div class="field" hidden>
         <span class="flabel" id="teamsLabel">Number of teams</span>
         <div class="seg" role="group" aria-labelledby="teamsLabel">
           <button type="button" data-teams="1" aria-pressed="false">1 team</button>
@@ -248,12 +254,16 @@ button{font:inherit}
         </div>
       </div>
       <div class="field">
-        <label for="gram">Grammar point</label>
-        <input id="gram" type="text" placeholder="e.g. past simple vs past continuous" autocomplete="off">
+        <label for="book">Book (optional)</label>
+        <input id="book" type="text" placeholder="e.g. W (workbook), SB (student’s book)" autocomplete="off">
       </div>
       <div class="field">
         <label for="num">Page or module number (optional)</label>
         <input id="num" type="text" inputmode="numeric" placeholder="e.g. 34" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="gram">Grammar point</label>
+        <input id="gram" type="text" placeholder="e.g. past simple vs past continuous" autocomplete="off">
       </div>
       <button class="go" id="create">Create game</button>
       <p class="status" id="status" aria-live="polite"></p>
@@ -430,16 +440,15 @@ const EXAMPLE = {
      full:"Look! It is raining."}
   ]).map(it => ({group: it.t, cue: it.cue, answer: it.answer, extra: it.extra, full: it.full, hint: EX_HINTS[it.t], greek: EX_GREEK[it.full] || ""}))
 };
-LIBRARY.push({id:EXAMPLE.id, level:EXAMPLE.level, topic:EXAMPLE.topic, items:EXAMPLE.items});
 
 /* ---------- labels per language ---------- */
 const UI = {
   en: {use:"Use these words", empty:"Tap or drag the tiles into the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
        first:"Put some tiles on the line first.", soFar:"Good so far. Keep going!", wrong:n=>"Not yet! Tile "+n+" (red) is wrong. Drag tiles to move them.",
-       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, wait:"Waiting for the other team to finish this sentence…", timeUp:"⏰ Time’s up! This sentence comes back later.", firstDone:"🏁 First to finish! +20 bonus", speed:"speed", time:"time", saveLb:"Save to leaderboard", nameFor:n=>"Name(s) for "+n, lbTitle:"🏆 Leaderboard", lbEmpty:"No scores yet. Be the first!", saved:"Saved ✓", think:n=>"Say it in English! Tiles in <b>"+n+"</b>"},
+       starts:w=>"It starts with “"+w+"”.", answer:"Answer: ", done:"Finished!", pts:"points", wins:n=>n+" wins!", draw:"It’s a draw!", well:"Well done!", cls:"Class", team:n=>"Team "+n, wait:"Waiting for the other team to finish this sentence…", timeUp:"⏰ Time’s up! This sentence comes back later.", firstDone:"🏁 First to finish! +20 bonus", speed:"speed", time:"time", saveLb:"Save to leaderboard", nameFor:n=>"Name(s) for "+n, lbTitle:"🏆 Leaderboard", lbEmpty:"No scores yet. Be the first!", saved:"Saved ✓", think:n=>"Say it in English! Tiles in <b>"+n+"</b>", pause:"⏸ Pause", resume:"▶ Continue", paused:"⏸ Paused – practise it together, then tap Continue"},
   de: {use:"Benutze diese Wörter", empty:"Tippe oder ziehe die Wörter in die richtige Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
        first:"Lege zuerst Wörter auf die Linie.", soFar:"Gut so weit. Mach weiter!", wrong:n=>"Noch nicht! Wort "+n+" (rot) ist falsch. Ziehe die Wörter an die richtige Stelle.",
-       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, wait:"Warte, bis das andere Team diesen Satz fertig hat…", timeUp:"⏰ Die Zeit ist um! Dieser Satz kommt später wieder.", firstDone:"🏁 Als Erste fertig! +20 Bonus", speed:"Tempo", time:"Zeit", saveLb:"In die Bestenliste", nameFor:n=>"Name(n) für "+n, lbTitle:"🏆 Bestenliste", lbEmpty:"Noch keine Ergebnisse. Sei die/der Erste!", saved:"Gespeichert ✓", think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>"}
+       starts:w=>"Der Satz beginnt mit „"+w+"“.", answer:"Lösung: ", done:"Fertig!", pts:"Punkte", wins:n=>n+" gewinnt!", draw:"Unentschieden!", well:"Super gemacht!", cls:"Klasse", team:n=>"Team "+n, wait:"Warte, bis das andere Team diesen Satz fertig hat…", timeUp:"⏰ Die Zeit ist um! Dieser Satz kommt später wieder.", firstDone:"🏁 Als Erste fertig! +20 Bonus", speed:"Tempo", time:"Zeit", saveLb:"In die Bestenliste", nameFor:n=>"Name(n) für "+n, lbTitle:"🏆 Bestenliste", lbEmpty:"Noch keine Ergebnisse. Sei die/der Erste!", saved:"Gespeichert ✓", think:n=>"Sag es auf Deutsch! Wörter in <b>"+n+"</b>", pause:"⏸ Pause", resume:"▶ Weiter", paused:"⏸ Pause – übt den Satz gemeinsam, dann auf Weiter tippen"}
 };
 const langOf = level => level.startsWith("D") ? "de" : "en";
 
@@ -460,22 +469,29 @@ function levelInfo(code){
 function loadGames(){ try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch(e){ return []; } }
 function saveGames(list){ try { localStorage.setItem(STORE, JSON.stringify(list.slice(0,12))); } catch(e){} }
 const HIDE_EX = "skool-tiles-hide-example";
+// e.g. EB-W-13 (class, book, page)
+const gameCode = g => [g.level, g.book, g.num].filter(Boolean).join("-");
 const withExample = list => { let hide = false; try { hide = localStorage.getItem(HIDE_EX) === "1"; } catch(e){} return hide ? list : [...list, EXAMPLE]; };
-function renderRecent(){
+function renderRecent(newId){
   const list = withExample(loadGames());
   const ul = $("recent"); ul.innerHTML = "";
   list.forEach(g => {
     const li = document.createElement("li");
-    const b = document.createElement("button");
+    if(g.id === newId) li.className = "fresh";
+    const b = document.createElement("div");
     b.className = "play";
     b.innerHTML = "<b></b> <span></span>";
-    b.querySelector("b").textContent = g.level + " · " + (g.num ? g.num + " · " : "") + g.topic;
+    b.querySelector("b").textContent = gameCode(g) + " · " + g.topic;
     b.querySelector("span").textContent = g.example ? "(example)" : "";
-    b.onclick = () => {
-      setStatus("");
-      start(g, teams);
-    };
     li.appendChild(b);
+    [1, 2].forEach(n => {
+      const s = document.createElement("button");
+      s.className = "startbtn";
+      s.textContent = "▶ " + n + (n === 1 ? " team" : " teams");
+      s.onclick = () => { setStatus(""); start(g, n); };
+      li.appendChild(s);
+    });
+    const gap = document.createElement("span"); gap.className = "actions-gap"; li.appendChild(gap);
     const tr = document.createElement("button");
     tr.className = "trophy"; tr.textContent = "🏆"; tr.setAttribute("aria-label","Leaderboard for " + g.topic);
     tr.onclick = () => openLb(g);
@@ -600,12 +616,13 @@ $("create").onclick = async () => {
       setStatus("Only " + items.length + " good sentences came back. Tap Create game to try again.", true);
       return;
     }
-    const num = $("num").value.trim();
-    const game = {id: Date.now().toString(36), level, num, topic: (raw.title || topic), items};
+    const num = $("num").value.trim(), book = $("book").value.trim();
+    const game = {id: Date.now().toString(36), level, book, num, topic: (raw.title || topic), items};
     saveGames([game, ...loadGames()]);
-    renderRecent();
-    setStatus("");
-    start(game, teams);
+    renderRecent(game.id);
+    setStatus("✓ Game created. Start it below with 1 or 2 teams.");
+    const fresh = document.querySelector(".recent li.fresh");
+    if(fresh) fresh.scrollIntoView({behavior: "smooth", block: "center"});
   } catch(e){
     const msg = {
       not_granted: "Claude was not allowed to write the sentences. Allow it when asked, then try again.",
@@ -639,6 +656,64 @@ function beep(final){
 function showSound(){ $("sound").textContent = soundOn ? "🔊" : "🔇"; $("sound").setAttribute("aria-label", soundOn ? "Sound on" : "Sound off"); }
 $("sound").onclick = () => { soundOn = !soundOn; try { localStorage.setItem("skool-tiles-sound", soundOn ? "on" : "off"); } catch(e){} initAudio(); showSound(); };
 showSound();
+
+/* ---------- soft background music during a game ---------- */
+// C major, happy and light: melody over C – Am – F – G, played quietly on a loop
+const MEL = ["E5",0,"G5","A5","G5",0,"E5","D5",  "C5",0,"D5","E5","A4",0,0,0,
+             "A5",0,"G5","E5","F5",0,"E5","C5",  "D5",0,"B4","D5","G4",0,0,0,
+             "E5",0,"G5","C6","B5",0,"G5","E5",  "C5",0,"E5","A5","G5",0,"E5",0,
+             "F5",0,"A5","G5","E5",0,"D5","E5",  "D5",0,"G4","B4","C5",0,0,0];
+const BASS = ["C3","A2","F2","G2","C3","A2","F2","G2"];   // one per bar of 8 steps
+const STEP = 60 / 100 / 2;                                     // eighth notes at 100 bpm
+const NOTE_I = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const freq = n => 440 * Math.pow(2, (NOTE_I[n[0]] + (+n.slice(1) + 1) * 12 - 69) / 12);
+let musicOn = true, mus = null;
+try { musicOn = localStorage.getItem("skool-tiles-music") !== "off"; } catch(e){}
+
+function note(f, t, len, vol, type, out){
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + len + 0.05);
+}
+function musicStart(){
+  initAudio();
+  musicStop();
+  if(!musicOn || !audioCtx) return;
+  const master = audioCtx.createGain();
+  master.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  master.gain.exponentialRampToValueAtTime(1, audioCtx.currentTime + 2);   // gentle fade-in
+  master.connect(audioCtx.destination);
+  mus = {master, step: 0, next: audioCtx.currentTime + 0.1};
+  mus.timer = setInterval(() => {
+    while(mus && mus.next < audioCtx.currentTime + 0.3){
+      const k = mus.step % MEL.length, t = mus.next;
+      if(MEL[k]) note(freq(MEL[k]), t, 0.35, 0.03, "triangle", master);
+      if(k % 8 === 0) note(freq(BASS[k / 8]), t, STEP * 7, 0.035, "sine", master);
+      if(k % 8 === 4) note(freq(BASS[(k - 4) / 8]) * 1.5, t, STEP * 3, 0.015, "sine", master);
+      mus.step++; mus.next += STEP;
+    }
+  }, 100);
+}
+function musicStop(){
+  if(!mus) return;
+  clearInterval(mus.timer);
+  const m = mus.master, t = audioCtx.currentTime;
+  try { m.gain.cancelScheduledValues(t); m.gain.setValueAtTime(Math.max(m.gain.value, 0.0001), t); m.gain.exponentialRampToValueAtTime(0.0001, t + 0.8); } catch(e){}
+  setTimeout(() => { try { m.disconnect(); } catch(e){} }, 1000);
+  mus = null;
+}
+function showMusic(){ $("music").classList.toggle("off", !musicOn); $("music").setAttribute("aria-label", musicOn ? "Music on" : "Music off"); }
+$("music").onclick = () => {
+  musicOn = !musicOn;
+  try { localStorage.setItem("skool-tiles-music", musicOn ? "on" : "off"); } catch(e){}
+  showMusic();
+  if(musicOn && panels.length && !panels.every(p => p.done) && !$("board").hidden) musicStart(); else musicStop();
+};
+showMusic();
 
 /* ---------- game ---------- */
 let panels = [], current = null, currentTeams = 2;
@@ -699,7 +774,7 @@ async function start(game, nTeams){
   current = game; currentTeams = nTeams;
   const T = UI[langOf(game.level)];
   $("topic").textContent = game.topic;
-  $("level").textContent = game.level; $("level").hidden = false;
+  $("level").textContent = gameCode(game); $("level").hidden = false;
   $("setup").hidden = true;
   $("results").hidden = true;
   $("newRound").hidden = SHARED && !LIBMODE;
@@ -716,6 +791,7 @@ async function start(game, nTeams){
     items
   })));
   window.scrollTo(0,0);
+  musicStart();
 }
 
 function makePanel(board, T, team){
@@ -725,7 +801,7 @@ function makePanel(board, T, team){
     <div class="phead"><span class="pname"></span><span class="pscore"><b>0</b><span></span></span></div>
     <div class="dots"></div>
     <div class="body">
-     <div class="preview" hidden><p class="gk"></p><p class="count"></p></div>
+     <div class="preview" hidden><p class="gk"></p><p class="count"></p><button class="btn pausebtn" type="button" hidden></button></div>
      <div class="work">
       <p class="label"></p>
       <p class="cue"></p>
@@ -767,6 +843,7 @@ function makePanel(board, T, team){
       q(".work").hidden = true; q(".preview").hidden = false;
       q(".gk").textContent = "⏳"; q(".count").textContent = T.wait;
       q(".preview").onclick = null;
+      q(".pausebtn").hidden = true;
       stopTimer();
       return;
     }
@@ -790,11 +867,21 @@ function makePanel(board, T, team){
     if(!it.greek){ pv.hidden = true; work.hidden = false; startTimer(); return; }
     work.hidden = true; pv.hidden = false;
     q(".gk").textContent = it.greek;
-    let n = 5;
-    const cnt = q(".count");
-    cnt.innerHTML = T.think(n);
-    const reveal = () => { clearInterval(p.timer); pv.hidden = true; work.hidden = false; pv.onclick = null; startTimer(); };
-    p.timer = setInterval(() => { n--; if(n <= 0) reveal(); else cnt.innerHTML = T.think(n); }, 1000);
+    let n = 5, paused = false;
+    const cnt = q(".count"), pb = q(".pausebtn");
+    const reveal = () => { clearInterval(p.timer); pv.hidden = true; work.hidden = false; pv.onclick = null; pb.hidden = true; startTimer(); };
+    const showCount = () => { cnt.innerHTML = paused ? T.paused : T.think(n); };
+    const tick = () => { n--; if(n <= 0) reveal(); else showCount(); };
+    // Pause keeps the Greek sentence on screen for whole-class practice; Continue resumes the countdown
+    const setPaused = v => {
+      paused = v; clearInterval(p.timer);
+      if(!v) p.timer = setInterval(tick, 1000);
+      pb.textContent = v ? T.resume : T.pause;
+      showCount();
+    };
+    pb.hidden = false;
+    pb.onclick = e => { e.stopPropagation(); setPaused(!paused); };
+    setPaused(false);
     pv.onclick = reveal;
   }
 
@@ -1042,7 +1129,7 @@ function drawLb(box, id, T, highlight){
 }
 function openLb(g){
   const T = UI[langOf(g.level)];
-  $("lbTitle").textContent = g.level + (g.num ? " · " + g.num : "") + " · " + g.topic;
+  $("lbTitle").textContent = gameCode(g) + " · " + g.topic;
   drawLb($("lbList"), g.id, T);
   $("lbBox").hidden = false;
 }
@@ -1050,6 +1137,7 @@ $("lbClose").onclick = () => $("lbBox").hidden = true;
 
 function checkAllDone(T){
   if(!panels.every(p => p.done)) return;
+  musicStop();
   const rows = $("rrows"); rows.innerHTML = "";
   panels.forEach(p => {
     const r = document.createElement("div");
@@ -1096,6 +1184,7 @@ function checkAllDone(T){
 }
 
 function backToSetup(){
+  musicStop();
   panels.forEach(o => o.stop && o.stop());
   if(LIBMODE){ showLibrary(); return; }
   $("results").hidden = true; $("board").hidden = true; $("board").innerHTML = "";
@@ -1149,15 +1238,13 @@ function showLibrary(){
   });
   $("libNote").textContent = libLevel ? "" : "Choose your class.";
   const ul = $("libList"); ul.innerHTML = "";
-  // highest page/module number first; games without a number at the end
+  // highest page/module number first (same page: by book); games without a number at the end
   const numOf = g => { const n = parseFloat(String(g.num || "").replace(/[^\d.]/g, "")); return isNaN(n) ? -Infinity : n; };
-  if(libLevel) LIBRARY.filter(g => g.level === libLevel).sort((a,b) => numOf(b) - numOf(a)).forEach(g => {
+  if(libLevel) LIBRARY.filter(g => g.level === libLevel).sort((a,b) => (numOf(b) - numOf(a)) || String(a.book || "").localeCompare(String(b.book || ""))).forEach(g => {
     const li = document.createElement("li"), b = document.createElement("button");
-    if(g.num){
-      const n = document.createElement("span");
-      n.className = "num"; n.textContent = g.num;
-      b.appendChild(n);
-    }
+    const n = document.createElement("span");
+    n.className = "num"; n.textContent = gameCode(g);
+    b.appendChild(n);
     b.appendChild(document.createTextNode(g.topic));
     b.onclick = () => { $("library").hidden = true; start(g, libTeams); };
     const tr = document.createElement("button");
@@ -1175,7 +1262,7 @@ async function updateStudentPage(){
     msg.textContent = "Preparing " + games.length + " games…";
     for(const g of games) if(g.items.some(it => !it.greek)) await addGreek(g);
     if(!SOURCE.includes(MARK)){ msg.textContent = "Couldn’t build the student page."; return; }
-    const lib = games.map(g => ({id:g.id, level:g.level, num:g.num || "", topic:g.topic, items:g.items}));
+    const lib = games.map(g => ({id:g.id, level:g.level, book:g.book || "", num:g.num || "", topic:g.topic, items:g.items}));
     const html = SOURCE.replace(MARK, () => JSON.stringify(lib).replace(/</g, "\\u003c"));
     const dl = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
     if(!dl){ msg.textContent = "Saving works when this page is open in Claude."; return; }
@@ -1189,7 +1276,7 @@ $("updBtn").onclick = updateStudentPage;
 
 /* ---------- share links ---------- */
 async function packGame(g){
-  const data = JSON.stringify({l:g.level, n:g.num || "", t:g.topic,
+  const data = JSON.stringify({l:g.level, b:g.book || "", n:g.num || "", t:g.topic,
     i:g.items.map(it => [it.group, it.cue, it.answer, it.extra, it.full, it.hint, it.greek || ""])});
   const stream = new Blob([new TextEncoder().encode(data)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
   const buf = new Uint8Array(await new Response(stream).arrayBuffer());
@@ -1201,7 +1288,7 @@ async function unpackGame(code){
   const buf = Uint8Array.from(bin, c => c.charCodeAt(0));
   const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   const d = JSON.parse(await new Response(stream).text());
-  return {id:"shared-" + d.l + "-" + d.t, level:d.l, num:d.n || "", topic:d.t,
+  return {id:"shared-" + d.l + "-" + d.t, level:d.l, book:d.b || "", num:d.n || "", topic:d.t,
     items:d.i.map(a => ({group:a[0], cue:a[1], answer:a[2], extra:a[3], full:a[4], hint:a[5], greek:a[6]}))};
 }
 async function openShare(g){
@@ -1213,7 +1300,7 @@ async function openShare(g){
   let link;
   try { link = STUDENT_PAGE + "#g=" + await packGame(g); }
   catch(e){ setStatus("This browser can’t make share links. Try Chrome.", true); return; }
-  $("shareTopic").textContent = g.level + " · " + g.topic;
+  $("shareTopic").textContent = gameCode(g) + " · " + g.topic;
   $("shareLink").value = link;
   $("shareSend").hidden = !navigator.share;
   $("shareCopy").textContent = "Copy link";
