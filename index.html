@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><!-- frame-runtime --><!-- /frame-runtime -->
+<html lang="en" data-theme="light" style="color-scheme: light;"><head><!-- frame-runtime --><!-- /frame-runtime -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SKooL Sentence Tiles</title>
@@ -345,7 +345,7 @@ button{font:inherit}
         <p class="sharenote" id="updMsg">Saves one index.html with all these games. Upload it to GitHub; the Google Classroom link stays the same.</p>
       </div>
     </div>
-    <div class="rules" style="margin-top:1.6rem">10 sentences per game (with 2 teams, both teams get the same 10 in a different order) · 3 trap tiles in each · correct first time: 10 points · second try or with a hint: 5 · a wrong answer shows the right sentence, which then comes back once more at the end (a second mistake: 0) · 30 seconds per sentence · final score = points × 10 × speed (up to ×2), timed to the tenth of a second · first team to finish: +200 · a leaderboard for each game</div>
+    <div class="rules" style="margin-top:1.6rem">10 sentences per game (with 2 teams, both teams get the same 10 in a different order) · 3 trap tiles in each · correct first time: 10 points · second try or with a hint: 5 · a wrong answer shows the right sentence, which then comes back once more at the end (a second mistake: 0) · 40 seconds per sentence · final score = points × 10 × speed (up to ×2), timed to the tenth of a second · first team to finish: +200 · a leaderboard for each game</div>
   </section>
 
   <section class="library" id="library" hidden="">
@@ -528,7 +528,7 @@ const UI = {
   en: {howTitle:"Πώς παίζουμε", howto:[
          ["🇬🇷","Διάβασε την πρόταση στα ελληνικά."],
          ["👆","Βάλε τις λέξεις στη σειρά. 3 είναι παγίδες!"],
-         ["✅","Πάτα Check σε 30″."],
+         ["✅","Πάτα Check σε 40″."],
          ["🔁","Λάθος; Θα την ξαναδείς στο τέλος."],
          ["🏆","Γρήγορα = περισσότεροι πόντοι!"]],
        use:"Use these words", empty:"Tap or drag the tiles into the right order", check:"Check", clear:"Clear", hint:"Hint", skip:"Skip",
@@ -537,7 +537,7 @@ const UI = {
   de: {howTitle:"Πώς παίζουμε", howto:[
          ["🇬🇷","Διάβασε την πρόταση στα ελληνικά."],
          ["👆","Βάλε τις λέξεις στη σειρά. 3 είναι παγίδες!"],
-         ["✅","Πάτα Prüfen σε 30″."],
+         ["✅","Πάτα Prüfen σε 40″."],
          ["🔁","Λάθος; Θα την ξαναδείς στο τέλος."],
          ["🏆","Γρήγορα = περισσότεροι πόντοι!"]],
        use:"Benutze diese Wörter", empty:"Tippe oder ziehe die Wörter in die richtige Reihenfolge", check:"Prüfen", clear:"Löschen", hint:"Tipp", skip:"Weiter",
@@ -1400,8 +1400,8 @@ function makePanel(board, T, team){
     }
   });
 
-  // 30 seconds per sentence; when time runs out the sentence goes back for later
-  const LIMIT = 30;
+  // 40 seconds per sentence; when time runs out the sentence goes back for later
+  const LIMIT = 40;
   function startTimer(){
     stopTimer();
     let left = LIMIT;
@@ -1461,9 +1461,9 @@ function makePanel(board, T, team){
   return p;
 }
 
-// speed multiplier: 30 s per sentence is the limit; the faster, the closer to ×2 (exact, not rounded)
+// speed multiplier: 40 s per sentence is the limit; the faster, the closer to ×2 (exact, not rounded)
 function speedMult(secs, n){
-  const limit = 30 * n;
+  const limit = 40 * n;
   return Math.max(1, Math.min(2, 1 + (limit - secs) / limit));
 }
 function fmtTime(secs){ const s = secs % 60; return Math.floor(secs / 60) + ":" + s.toFixed(1).padStart(4, "0"); }
