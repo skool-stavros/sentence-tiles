@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<html lang="en" data-theme="light" style="color-scheme: light;"><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 
 
 
@@ -1298,6 +1298,9 @@ function makePanel(board, T, team){
     p.pool = pool;
     q(".cue").textContent = it.cue;
     q(".gkline").textContent = it.greek ? "🇬🇷 " + it.greek : "";
+    // only the Greek sentence while playing (saves space on phones); the cue is shown only if there is no Greek
+    q(".cue").hidden = !!it.greek;
+    q(".label").hidden = !!it.greek;
     q(".track").classList.remove("ok","bad");
     q(".bigans").hidden = true;
     setFb("");
