@@ -261,6 +261,25 @@ button{font:inherit}
 #recent .ic.armed{background:var(--bad);border-color:var(--bad);color:#fff;font-size:.85rem;font-weight:700}
 #recent .tops{display:block;white-space:pre-line;font-size:.75rem;line-height:1.3;color:var(--muted);text-align:left;min-width:6.5rem}
 #recent .editrow td{text-align:left;padding:.6rem}
+/* class grid */
+.pmode{display:flex;gap:.4rem;justify-content:center;margin:0 0 .5rem}
+.pmode[hidden]{display:none}
+.pmode button{font:inherit;font-weight:700;font-size:.95rem;padding:.35rem .7rem;border-radius:10px;border:3px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.pmode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+#progTable.grid{font-size:.9rem}
+#progTable.grid th{font-size:.75rem;padding:.35rem .25rem;white-space:nowrap}
+#progTable.grid td{padding:.3rem .25rem}
+#progTable.grid{border-collapse:separate;border-spacing:0}
+#progTable.grid .sn{text-align:left;position:sticky;left:0;background:var(--surface);cursor:pointer;white-space:nowrap;z-index:2;width:8rem;min-width:8rem;max-width:8rem;overflow:hidden;text-overflow:ellipsis}
+#progTable.grid .s1{position:sticky;left:8rem;z-index:2;width:3.4rem;min-width:3.4rem}
+#progTable.grid .s2{position:sticky;left:11.4rem;z-index:2;width:3.2rem;min-width:3.2rem;box-shadow:3px 0 0 var(--track)}
+#progTable.grid td.sn{color:var(--accent);font-weight:700}
+#progTable.grid td.hi{color:var(--ok);font-weight:700}
+#progTable.grid td.lo{color:var(--bad);font-weight:700}
+#progTable.grid td.no{color:var(--muted)}
+#progTable.grid .sum{background:var(--bg);font-weight:700}
+#progTable.grid th.sn,#progTable.grid th.sum{z-index:3}
+.rcard.prog{max-width:min(64rem, 96vw)}
 /* other classes */
 #otherCls{display:block;margin:0 auto 1rem;--team:var(--accent)}
 #otherCls[hidden]{display:none}
@@ -489,6 +508,7 @@ button{font:inherit}
 <div class="results" id="progBox" hidden="">
   <div class="rcard prog">
     <h2 id="progTitle"></h2>
+    <div class="pmode" id="pmode" hidden=""><button type="button" data-m="grid">🔢 Grades per task</button><button type="button" data-m="list">📋 Summary</button></div>
     <p class="sharenote" id="progNote"></p>
     <div class="progwrap"><table id="progTable"></table></div>
     <div class="controls"><button class="btn primary" id="progClose" style="--team:var(--accent)">Close</button></div>
@@ -970,7 +990,7 @@ async function replaceSentence(i, btn){
 }
 /* ---------- 📊 students' progress (read from the scores Sheet's Results tab) ---------- */
 const SHEET_ID = "1HDt5EPWaQHSTRGn0-QQ_U-rkOGNgVU3Vgzdrvf6_gWU";   // "Sentence Tiles Scores"
-let progSort = "sets";
+let progSort = "sets", progMode = "grid";
 async function openProgress(){
   const lvl = $("lvl").value;
   $("progTitle").textContent = "📊 " + (lvl ? "Students in " + lvl : "All students");
@@ -1011,7 +1031,53 @@ async function openProgress(){
     $("progNote").textContent = list.length
       ? list.length + " students · tap a name to see their grades · tap a column title to sort"
       : "No finished sets yet" + (lvl ? " in " + lvl : "") + ".";
-    if(list.length) draw();
+    // grid: one row per student, one column per task of this class, best mark /20 in each cell
+    const drawGrid = () => {
+      const t = $("progTable");
+      if(!lvl){ t.innerHTML = ""; $("progNote").textContent = "Choose a class in Level first, then open 📊 Students again."; return; }
+      const tasks = withExample(loadGames()).filter(g => g.level === lvl && g.task).sort((a, b) => taskNum(a) - taskNum(b) || String(a.task).localeCompare(String(b.task)));
+      const studs = [...by.values()].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      $("progNote").textContent = studs.length + " students · " + tasks.length + " tasks · best mark /20 · tap a name for details";
+      t.innerHTML = "<thead><tr><th class='sn'>Name</th></tr></thead><tbody></tbody>";
+      const hr = t.tHead.rows[0];
+      // Done and Avg stay fixed next to the name; the task columns scroll to the right
+      [["Done", "sum s1"], ["Avg", "sum s2"]].forEach(([h, c]) => { const th = document.createElement("th"); th.textContent = h; th.className = c; hr.appendChild(th); });
+      tasks.forEach(g => { const th = document.createElement("th"); th.textContent = g.task; th.title = gameCode(g) + " · " + g.topic; hr.appendChild(th); });
+      studs.forEach(st => {
+        const mine = rows.filter(x => String(x[1]) === st.pw);
+        const tr = document.createElement("tr");
+        const nm = document.createElement("td"); nm.className = "sn"; nm.textContent = st.name;
+        nm.onclick = () => showGrades(st.name, mine, () => { setMode("grid"); });
+        tr.appendChild(nm);
+        const d = document.createElement("td"); d.className = "sum s1"; tr.appendChild(d);
+        const a = document.createElement("td"); a.className = "sum s2"; tr.appendChild(a);
+        let done = 0, sum = 0;
+        tasks.forEach(g => {
+          const m = mine.filter(x => String(x[11]) === g.id || String(x[12] || "") === String(g.task)).map(x => +x[8] || 0);
+          const td = document.createElement("td");
+          if(m.length){ const best = Math.max(...m); done++; sum += best; td.textContent = best; td.className = best >= 17 ? "hi" : best < 10 ? "lo" : ""; }
+          else { td.textContent = "·"; td.className = "no"; }
+          tr.appendChild(td);
+        });
+        d.textContent = done + "/" + tasks.length;
+        a.textContent = done ? Math.round(sum / done * 10) / 10 : "–";
+        t.tBodies[0].appendChild(tr);
+      });
+    };
+    const setMode = m => {
+      progMode = m;
+      document.querySelectorAll("#pmode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === m));
+      $("progTitle").textContent = "📊 " + (lvl ? "Students in " + lvl : "All students");
+      $("progTable").className = m === "grid" ? "grid" : "";
+      if(m === "grid") drawGrid();
+      else {
+        $("progNote").textContent = list.length ? list.length + " students · tap a name to see their grades · tap a column title to sort" : "No finished sets yet" + (lvl ? " in " + lvl : "") + ".";
+        if(list.length) draw(); else $("progTable").innerHTML = "";
+      }
+    };
+    $("pmode").hidden = false;
+    document.querySelectorAll("#pmode button").forEach(b => b.onclick = () => setMode(b.dataset.m));
+    setMode(lvl ? progMode : "list");
   } catch(e){
     $("progNote").textContent = e && e.code === "not_granted"
       ? "Google Sheets wasn’t allowed. Tap 📊 Students again and allow it."
@@ -1035,6 +1101,7 @@ $("progClose").onclick = () => $("progBox").hidden = true;
 
 // one student's grades: task, date, group, mark /20 (newest first)
 function showGrades(name, rows, back, greek){
+  $("pmode").hidden = true; $("progTable").className = "";
   const taskById = new Map(withExample(loadGames()).concat(LIBRARY).map(g => [g.id, g.task || ""]));
   // dates come as "dd/mm/yyyy hh:mm" (Sheet) or "yyyy-mm-dd hh:mm" (script): sort as yyyy-mm-dd
   const iso = d => { const m = String(d).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/); return m ? m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0") + m[4] : String(d); };
@@ -1056,7 +1123,7 @@ function showGrades(name, rows, back, greek){
   if(back){
     const tr = document.createElement("tr"), td = document.createElement("td");
     td.colSpan = 4; td.innerHTML = '<button class="btn" type="button">← All students</button>';
-    td.querySelector("button").onclick = () => { $("progTitle").textContent = "📊 Students"; $("progNote").textContent = ""; back(); };
+    td.querySelector("button").onclick = () => { $("pmode").hidden = false; $("progNote").textContent = ""; back(); };
     tr.appendChild(td); t.tBodies[0].appendChild(tr);
   }
   $("progBox").hidden = false;
@@ -1094,7 +1161,7 @@ Write exactly ${POOL} different sentences for a "sentence tiles" game. Students 
 For each sentence give:
 - "group": short label of the form practised (e.g. "past simple").
 - "cue": an emoji, then the key words in their BASIC form, separated by " · " (e.g. "🐱 the cat · sleep · Look!" for "Look! The cat is sleeping."). The cue must NOT show the correct form; the student must apply the grammar. Include the time words or signals that decide the form.
-- "answer": the tiles of the correct sentence in order. EVERY verb form, auxiliary, modal, negation (not, n't forms, nicht, kein), subject pronoun and question word is its OWN tile, so students must decide the form and the word order themselves: never put two of these together (wrong: "did we", "has been", "don't like", "is sleeping", "hat gemacht"; right: "did" + "we", "has" + "been", "don't" + "like"). This matters most for inversion, questions, passives and perfect/continuous tenses. Only grammar-neutral groups may stay together as one tile (e.g. "the cat", "every day", "at the moment", "in the garden"). Write tiles in lower case except "I", names, German nouns, and words that are always capitalised. Put "?" as its own last tile in questions; no full stop tile.
+- "answer": the tiles of the correct sentence in order. EVERY verb form, auxiliary, modal, negation (not, n't forms, nicht, kein), subject pronoun and question word is its OWN tile, so students must decide the form and the word order themselves: never put two of these together (wrong: "did we", "has been", "don't like", "is sleeping", "hat gemacht"; right: "did" + "we", "has" + "been", "don't" + "like"). This matters most for inversion, questions, passives and perfect/continuous tenses. Only grammar-neutral groups may stay together as one tile (e.g. "the cat", "every day", "at the moment", "in the garden"). Write tiles in lower case except "I", names, German nouns, and words that are always capitalised. No punctuation tiles: no "?" tile and no full stop tile (the full sentence in "full" keeps its punctuation).
 - "extra": exactly 3 trap tiles, each a SINGLE word: wrong forms that students typically confuse with the correct ones (wrong tense, wrong auxiliary, missing -s, wrong case or ending, etc.). A trap tile must never be the same as a tile in "answer", and no trap tile may make a different correct sentence possible.
 - "full": the finished sentence with normal capitals and punctuation.
 - "greek": a natural Greek translation of the full sentence. Students see it first and must think how to say it in ${lang}.
@@ -1354,7 +1421,7 @@ async function findAlts(game){
   const list = game.items.map((it, i) =>
     `${i+1}. Greek: ${it.greek || "-"} | Correct: ${it.answer.map(t => "[" + t + "]").join(" ")} | All tiles: ${[...it.answer, ...it.extra].map(t => "[" + t + "]").join(" ")}`).join("\n");
   const prompt = `You check a ${lang} grammar game for school students. For each item, students build a sentence by putting tiles in order; they may leave some tiles unused, and each tile can be used once.
-List EVERY OTHER way of arranging tiles from "All tiles" that gives a fully correct, natural ${lang} sentence with the same meaning as the Greek, which a teacher would accept as correct: other word orders (e.g. a time phrase at the start instead of the end) and versions using a different tile. Do not repeat the given correct order. Never list anything with a grammar, spelling or word-order mistake, and nothing a teacher would mark wrong. Questions must end with the "?" tile. If there is no other correct sentence, give an empty list.
+List EVERY OTHER way of arranging tiles from "All tiles" that gives a fully correct, natural ${lang} sentence with the same meaning as the Greek, which a teacher would accept as correct: other word orders (e.g. a time phrase at the start instead of the end) and versions using a different tile. Do not repeat the given correct order. Never list anything with a grammar, spelling or word-order mistake, and nothing a teacher would mark wrong. There are no punctuation tiles. If there is no other correct sentence, give an empty list.
 
 ${list}
 
@@ -1397,7 +1464,10 @@ async function start(game, nTeams){
   board.hidden = false;
   board.className = "board" + (nTeams === 2 ? " two" : "");
   board.innerHTML = "";
-  const hands = deal(game.items, nTeams);
+  // no "?" tile: students build the words only; the corrected sentence ("full") still shows the "?"
+  const noQ = a => (a || []).filter(t => !/^[?;.!]$/.test(String(t).trim()));
+  const playItems = game.items.map(it => ({...it, answer: noQ(it.answer), extra: noQ(it.extra), alts: (it.alts || []).map(noQ)}));
+  const hands = deal(playItems, nTeams);
   panels.forEach(o => o.stop && o.stop());
   panels = [];
   hands.forEach((items,k) => panels.push(makePanel(board, T, {
