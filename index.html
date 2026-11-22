@@ -39,6 +39,25 @@ body{
   font-weight:700; line-height:1.35; -webkit-tap-highlight-color:transparent;
 }
 button{font:inherit}
+/* joyful red page background: bright red with light confetti dots (cards stay white) */
+body{
+  background-color:#F2353E;
+  background-image:
+    radial-gradient(circle at 20% 30%, #FFE600 0 5px, transparent 6px),
+    radial-gradient(circle at 75% 15%, #1E90FF 0 4px, transparent 5px),
+    radial-gradient(circle at 60% 70%, #FFE600 0 6px, transparent 7px),
+    radial-gradient(circle at 10% 85%, #00B4FF 0 4px, transparent 5px),
+    radial-gradient(circle at 90% 55%, #FFD000 0 4px, transparent 5px),
+    linear-gradient(160deg, #FF5A4E 0%, #F2353E 50%, #E21F4B 100%);
+  background-size:180px 180px,140px 140px,220px 220px,120px 120px,200px 200px,100% 100%;
+  background-attachment:fixed;
+  min-height:100vh;
+}
+/* text that sits straight on the red is white */
+body .top h1,body .library > h2,body .recent h3,body #syncNote,body .tpick > span,body .tpick .sharenote,body .rules,body .update .scoresfield label,body #updMsg,body .libnote,body .setup > p{color:#fff;text-shadow:0 1px 2px rgba(80,0,10,.35)}
+.btn:not(.primary),.tpick button:not([aria-pressed="true"]),.levels button:not([aria-pressed="true"]){background:var(--surface)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body{background:linear-gradient(165deg,#6A1018 0%,#4A0A12 100%) fixed} }
+:root[data-theme="dark"] body{background:linear-gradient(165deg,#6A1018 0%,#4A0A12 100%) fixed}
 .wrap{max-width:96rem;margin:0 auto;padding:1rem}
 
 /* top bar */
@@ -162,9 +181,9 @@ button{font:inherit}
 #libList li > button:first-child{flex:1;min-width:0}
 #libList .txt{display:flex;flex-direction:column;gap:.15rem;min-width:0}
 #libList .tops{font-size:.95rem;font-weight:400;color:var(--muted)}
-.recent .scoresfield{margin:0 0 .8rem;display:flex;align-items:center;gap:.6rem}
-.recent .scoresfield label{flex:none;width:9rem;margin:0}
-.recent .scoresfield input{flex:1;width:0;min-width:0;font:inherit;font-size:1rem;padding:.5rem .7rem;border-radius:10px;border:3px solid var(--track);background:var(--bg);color:var(--ink)}
+.update .scoresfield{margin:0 0 .8rem;display:flex;align-items:center;gap:.6rem}
+.update .scoresfield label{flex:none;width:9rem;margin:0}
+.update .scoresfield input{flex:1;width:0;min-width:0;font:inherit;font-size:1rem;padding:.5rem .7rem;border-radius:10px;border:3px solid var(--track);background:var(--bg);color:var(--ink)}
 #libList .trophy{width:auto;flex:none;display:block;padding:0 1rem;font-size:1.4rem;text-align:center}
 .rcard h2{font-size:2rem;margin:0 0 1rem}
 .rrow{display:flex;justify-content:space-between;font-size:1.5rem;padding:.5rem 0;border-bottom:2px solid var(--track)}
@@ -188,7 +207,9 @@ button{font:inherit}
 #libList button{width:100%;text-align:left;font-size:1.25rem;padding:.9rem 1rem;border-radius:14px;border:2px solid var(--track);background:var(--surface);color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:.8rem}
 #libList .num{flex:none;min-width:3rem;text-align:center;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:.2rem .5rem;font-size:1.3rem}
 .libnote{text-align:center;color:var(--muted);font-size:1.15rem;margin:0 0 1rem}
-.update{margin-top:1.4rem}
+.update{margin:0 0 1.2rem;text-align:center}
+.update #updMsg{margin:.4rem 0 .6rem}
+.update .scoresfield{text-align:left}
 .update .btn{--team:var(--accent)}
 /* share */
 .recent .share{border:2px solid var(--track);background:var(--surface);color:var(--accent);border-radius:12px;font-size:1rem;padding:0 .8rem;cursor:pointer}
@@ -397,6 +418,14 @@ button{font:inherit}
   </div>
 
   <section class="setup" id="setup">
+      <div class="update">
+        <button class="btn" id="updBtn">⬆ Update student page</button>
+        <p class="sharenote" id="updMsg">Saves one index.html with all these games. Upload it to GitHub; the Google Classroom link stays the same.</p>
+        <div class="field scoresfield">
+          <label for="scoresUrl">Online scores link</label>
+          <input id="scoresUrl" type="url" placeholder="optional: your Google Apps Script web app link" autocomplete="off">
+        </div>
+      </div>
     <div class="form">
       <div class="field lvlfield">
         <label for="lvl">Level</label>
@@ -451,14 +480,6 @@ button{font:inherit}
         <span class="sharenote">· tap a task number to start</span>
       </div>
       <div class="ttable"><table id="recent"></table></div>
-      <div class="update">
-        <div class="field scoresfield">
-          <label for="scoresUrl">Online scores link</label>
-          <input id="scoresUrl" type="url" placeholder="optional: your Google Apps Script web app link" autocomplete="off">
-        </div>
-        <button class="btn" id="updBtn">⬆ Update student page</button>
-        <p class="sharenote" id="updMsg">Saves one index.html with all these games. Upload it to GitHub; the Google Classroom link stays the same.</p>
-      </div>
     </div>
     <div class="rules" style="margin-top:1.6rem">10 sentences per game (with 2 teams, both teams get the same 10 in a different order) · 3 trap tiles in each · correct first time: 10 points · second try or with a hint: 5 · a wrong answer shows the right sentence, which then comes back once more at the end (a second mistake: 0) · 40 seconds per sentence · final score = points × 10 × speed (up to ×2), timed to the tenth of a second · first team to finish: +200 · a leaderboard for each game</div>
   </section>
@@ -1965,7 +1986,7 @@ async function postResult(p){
   const n = p.items.length;
   const mark = Math.round(((p.first || 0) + (p.second || 0)) / n * 200) / 10;   // out of 20: 2 per correct sentence, first or second try
   try {
-    const r = await api({action: "result", pw: STU.pw, cls: stuClass(), game: current.id, code: gameCode(current), task: current.task || "",
+    const r = await api({action: "result", pw: STU.pw, cls: stuClass(), game: current.id, code: gameCode(current), task: current.task || "", desc: current.topic || "",
                          first: p.first || 0, second: p.second || 0, total: n, mark, score: p.final, secs: Math.round(p.secs * 10) / 10});
     if(r.status === "ok"){ STU.stats = r.stats; setStu(STU); loadMyGrades(); }
   } catch(e){}
