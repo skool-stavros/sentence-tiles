@@ -240,6 +240,27 @@ button{font:inherit}
 .mytable .tnum{font:inherit;font-weight:700;font-size:1rem;background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:.3rem .5rem;cursor:pointer}
 .mytable td:nth-child(3){font-size:.9rem;font-weight:400}
 .mytable .sharenote{margin:.6rem 0 0;font-size:.95rem}
+/* teacher's table */
+.tpick{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:0 0 .6rem}
+.tpick > span{font-size:1rem;color:var(--muted)}
+.tpick .sharenote{margin:0;font-size:.95rem}
+.tpick button{font:inherit;font-weight:700;font-size:1rem;padding:.4rem .8rem;border-radius:10px;border:3px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.tpick button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.ttable{overflow-x:auto;background:var(--surface);border-radius:14px;border:2px solid var(--track)}
+#recent{width:100%;border-collapse:collapse;font-size:.98rem}
+#recent th{font-size:.8rem;color:var(--muted);text-align:center;padding:.4rem .3rem;border-bottom:2px solid var(--track);white-space:nowrap}
+#recent th:nth-child(2){text-align:left}
+#recent td{padding:.35rem .3rem;border-bottom:1px solid var(--track);text-align:center;vertical-align:middle}
+#recent tr.fresh td{background:color-mix(in srgb, var(--ok) 14%, transparent)}
+#recent .tnum{font:inherit;font-weight:700;font-size:.95rem;background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:.3rem .5rem;cursor:pointer;white-space:nowrap}
+#recent .tcls{font-weight:700;white-space:nowrap}
+#recent .tdesc{text-align:left;min-width:11rem}
+#recent .tcode{color:var(--accent);margin-right:.2rem;white-space:nowrap}
+#recent .tdesc{font-weight:400}
+#recent .ic{font-size:1.05rem;border:2px solid var(--track);background:var(--surface);border-radius:9px;padding:.15rem .35rem;cursor:pointer;color:var(--ink)}
+#recent .ic.armed{background:var(--bad);border-color:var(--bad);color:#fff;font-size:.85rem;font-weight:700}
+#recent .tops{display:block;white-space:pre-line;font-size:.75rem;line-height:1.3;color:var(--muted);text-align:left;min-width:6.5rem}
+#recent .editrow td{text-align:left;padding:.6rem}
 /* other classes */
 #otherCls{display:block;margin:0 auto 1rem;--team:var(--accent)}
 #otherCls[hidden]{display:none}
@@ -404,7 +425,13 @@ button{font:inherit}
       <div class="rhead"><h3 id="recentTitle">Play a saved game</h3>
         <span class="taskgo"><input id="tTask" type="text" inputmode="numeric" placeholder="Task no." autocomplete="off" aria-label="Task number"><button class="btn" id="tTaskGo" type="button">Go</button></span></div>
       <p class="sharenote" id="syncNote"></p>
-      <ul id="recent"></ul>
+      <div class="tpick" role="group" aria-label="Teams">
+        <span>Start with</span>
+        <button type="button" data-n="1">▶ 1 team</button>
+        <button type="button" data-n="2">▶ 2 teams</button>
+        <span class="sharenote">· tap a task number to start</span>
+      </div>
+      <div class="ttable"><table id="recent"></table></div>
       <div class="update">
         <div class="field scoresfield">
           <label for="scoresUrl">Online scores link</label>
@@ -751,101 +778,45 @@ const pageNum = g => { const n = parseFloat(String(g.num || "").replace(/[^\d.]/
 const taskNum = g => { const n = parseInt(String(g.task || ""), 10); return isNaN(n) ? -Infinity : n; };
 const byPage = (a, b) => (taskNum(b) - taskNum(a)) || String(b.task || "").localeCompare(String(a.task || "")) || (pageNum(b) - pageNum(a)) || String(a.book || "").localeCompare(String(b.book || "")) || (parseInt(b.id, 36) || 0) - (parseInt(a.id, 36) || 0);
 
+let tTeams = 2;
+try { tTeams = +localStorage.getItem("skool-tiles-teams") || 2; } catch(e){}
+function showTeams(){ document.querySelectorAll(".tpick button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.n === tTeams)); }
+document.querySelectorAll(".tpick button").forEach(b => b.onclick = () => { tTeams = +b.dataset.n; try { localStorage.setItem("skool-tiles-teams", tTeams); } catch(e){} showTeams(); });
+showTeams();
+
+// teacher's games: one compact table (all classes, or the class chosen in Level)
 function renderRecent(newId){
   ensureTasks();
-  // only the games of the class chosen in the Level menu, newest page first
   const lvl = $("lvl").value;
   const order = [...$("lvl").options].map(o => o.value);
   const list = withExample(loadGames()).filter(g => !lvl || g.level === lvl)
     .sort((a, b) => lvl ? byPage(a, b) : (order.indexOf(a.level) - order.indexOf(b.level)) || byPage(a, b));
-  $("recentTitle").textContent = lvl ? "Games for " + lvl : "All games";
-  const ul = $("recent"); ul.innerHTML = "";
-  if(!list.length){ const li = document.createElement("li"); li.style.display = "block"; li.className = "sharenote"; li.textContent = lvl ? "No games for " + lvl + " yet." : "No games yet."; ul.appendChild(li); }
+  $("recentTitle").textContent = (lvl ? "Games for " + lvl : "All games") + " (" + list.length + ")";
+  const t = $("recent");
+  t.innerHTML = "<thead><tr><th>Task</th><th>Description</th><th>Check</th><th>Edit</th><th>Delete</th><th>Top 3</th><th></th><th>Share</th></tr></thead><tbody></tbody>";
+  const tb = t.tBodies[0];
+  if(!list.length){ const tr = document.createElement("tr"); tr.innerHTML = "<td colspan='8' class='sharenote'></td>"; tr.firstChild.textContent = lvl ? "No games for " + lvl + " yet." : "No games yet."; tb.appendChild(tr); }
+  const btn = (txt, label, cls, fn) => { const td = document.createElement("td"), b = document.createElement("button"); b.className = cls; b.textContent = txt; b.setAttribute("aria-label", label); b.onclick = fn; td.appendChild(b); return td; };
   list.forEach(g => {
-    const li = document.createElement("li");
-    if(g.id === newId) li.className = "fresh";
-    const b = document.createElement("div");
-    b.className = "play";
-    b.innerHTML = "<b></b> <span></span>";
-    b.querySelector("b").textContent = (g.task ? g.task + " · " : "") + gameCode(g) + " · " + g.topic;
-    b.querySelector("span").textContent = g.example ? "(example)" : "";
-    li.appendChild(b);
-    [1, 2].forEach(n => {
-      const s = document.createElement("button");
-      s.className = "startbtn";
-      s.textContent = "▶ " + n + (n === 1 ? " team" : " teams");
-      s.onclick = () => { setStatus(""); start(g, n); };
-      li.appendChild(s);
-    });
-    const ck = document.createElement("button");
-    ck.className = "share"; ck.textContent = "👁 Check"; ck.setAttribute("aria-label","Check the sentences of " + g.topic);
-    ck.onclick = () => openReview(g);
-    li.appendChild(ck);
-    const gap = document.createElement("span"); gap.className = "actions-gap"; li.appendChild(gap);
-    const tr = document.createElement("button");
-    tr.className = "trophy"; tr.textContent = "🏆"; tr.setAttribute("aria-label","Leaderboard for " + g.topic);
-    tr.onclick = () => openLb(g);
-    li.appendChild(tr);
-    const sh = document.createElement("button");
-    sh.className = "share"; sh.textContent = "🔗 Share"; sh.setAttribute("aria-label","Share " + g.topic + " with students");
-    sh.onclick = () => openShare(g);
-    li.appendChild(sh);
-    if(!g.example){
-      // ✏️ change book, page or title of a saved game
-      const ed = document.createElement("button");
-      ed.className = "share"; ed.textContent = "✏️ Edit"; ed.setAttribute("aria-label","Edit " + g.topic);
-      ed.onclick = () => {
-        li.innerHTML = `
-          <div class="editform">
-            <label>Book<input data-f="book" type="text" placeholder="e.g. W, SB"></label>
-            <label>Page or module<input data-f="num" type="text" inputmode="numeric" placeholder="e.g. 34"></label>
-            <label>Task number<input data-f="task" type="text" placeholder="empty = automatic" autocomplete="off"></label>
-            <label>Title<input data-f="topic" type="text"></label>
-            <p class="sharenote wide edmsg"></p>
-            <div class="editbtns"><button class="startbtn" data-x="save">Save</button><button class="share" data-x="cancel">Cancel</button></div>
-          </div>`;
-        const f = k => li.querySelector(`[data-f="${k}"]`);
-        f("book").value = g.book || ""; f("num").value = g.num || ""; f("topic").value = g.topic; f("task").value = g.task || "";
-        f("book").focus();
-        li.querySelector('[data-x="cancel"]').onclick = () => renderRecent();
-        li.querySelector('[data-x="save"]').onclick = () => {
-          const book = f("book").value.trim(), num = f("num").value.trim(), topic = f("topic").value.trim() || g.topic;
-          const task = f("task").value.toUpperCase().replace(/\s+/g, "");
-          const all = loadGames();
-          const pageChanged = String(num) !== String(g.num || "");
-          let upd;
-          if(!task || (task === String(g.task || "").toUpperCase() && !g.taskManual && pageChanged)){
-            upd = {task: undefined, taskManual: undefined};            // empty (or page changed): automatic number
-          } else if(task === String(g.task || "").toUpperCase()){
-            upd = {};                                                  // unchanged
-          } else {
-            if(!/^[0-9]{3,6}[A-Z]?$/.test(task)){ li.querySelector(".edmsg").textContent = "⚠️ Use numbers, e.g. 65008 (a letter at the end is allowed: 65008B)."; return; }
-            const other = all.find(x => x.id !== g.id && String(x.task || "").toUpperCase() === task);
-            if(other){ li.querySelector(".edmsg").textContent = "⚠️ " + task + " is already used by " + gameCode(other) + " · " + other.topic + "."; return; }
-            upd = {task, taskManual: true};
-          }
-          saveGames(all.map(x => {
-            if(x.id !== g.id) return x;
-            const y = {...x, book, num, topic, ...upd};
-            if(y.task === undefined) delete y.task;
-            if(y.taskManual === undefined) delete y.taskManual;
-            return y;
-          }));
-          renderRecent(g.id);
-        };
-        li.querySelectorAll("input").forEach(inp => inp.addEventListener("keydown", e => { if(e.key === "Enter") li.querySelector('[data-x="save"]').click(); }));
-      };
-      li.appendChild(ed);
-    }
+    const tr = document.createElement("tr");
+    if(g.id === newId) tr.className = "fresh";
+    // task number: starts the game with the chosen number of teams
+    tr.appendChild(btn(g.task || gameCode(g), "Start " + g.topic, "tnum", () => { setStatus(""); start(g, tTeams); }));
+    const ds = document.createElement("td"); ds.className = "tdesc";
+    const code = document.createElement("b"); code.className = "tcode"; code.textContent = gameCode(g);
+    ds.appendChild(code);
+    ds.appendChild(document.createTextNode(" " + g.topic + (g.example ? " (example)" : "")));
+    tr.appendChild(ds);
+    tr.appendChild(btn("👁", "Check the sentences of " + g.topic, "ic", () => openReview(g)));
+    tr.appendChild(g.example ? document.createElement("td") : btn("✏️", "Edit " + g.topic, "ic", () => editRow(g, tr)));
     {
       // tap once: "Sure?" — tap again within 3 seconds: deleted
-      const d = document.createElement("button");
-      d.className = "del"; d.textContent = "🗑 Delete"; d.setAttribute("aria-label","Delete " + g.topic);
+      const td = btn("🗑", "Delete " + g.topic, "ic del", null), d = td.firstChild;
       let armed = null;
       d.onclick = () => {
         if(!armed){
           d.textContent = "Sure?"; d.classList.add("armed");
-          armed = setTimeout(() => { armed = null; d.textContent = "🗑 Delete"; d.classList.remove("armed"); }, 3000);
+          armed = setTimeout(() => { armed = null; d.textContent = "🗑"; d.classList.remove("armed"); }, 3000);
           return;
         }
         clearTimeout(armed);
@@ -854,10 +825,62 @@ function renderRecent(newId){
         deleteLb(g.id);
         renderRecent();
       };
-      li.appendChild(d);
+      tr.appendChild(td);
     }
-    ul.appendChild(li);
+    const top = document.createElement("td"), tops = document.createElement("span");
+    tops.className = "tops"; tops.dataset.id = g.id; tops.textContent = "…";
+    top.appendChild(tops); tr.appendChild(top);
+    tr.appendChild(btn("🏆", "Leaderboard for " + g.topic, "ic", () => openLb(g)));
+    tr.appendChild(btn("🔗", "Share " + g.topic + " with students", "ic", () => openShare(g)));
+    tb.appendChild(tr);
   });
+  fillTops();
+}
+
+// ✏️ change book, page, task number or title of a saved game (opens under the row)
+function editRow(g, row){
+  const tr = document.createElement("tr"), li = document.createElement("td");
+  tr.className = "editrow"; li.colSpan = 8; tr.appendChild(li);
+  row.replaceWith(tr);
+  li.innerHTML = `
+    <div class="editform">
+      <label>Book<input data-f="book" type="text" placeholder="e.g. W, SB"></label>
+      <label>Page or module<input data-f="num" type="text" inputmode="numeric" placeholder="e.g. 34"></label>
+      <label>Task number<input data-f="task" type="text" placeholder="empty = automatic" autocomplete="off"></label>
+      <label>Title<input data-f="topic" type="text"></label>
+      <p class="sharenote wide edmsg"></p>
+      <div class="editbtns"><button class="startbtn" data-x="save">Save</button><button class="share" data-x="cancel">Cancel</button></div>
+    </div>`;
+  const f = k => li.querySelector(`[data-f="${k}"]`);
+  f("book").value = g.book || ""; f("num").value = g.num || ""; f("topic").value = g.topic; f("task").value = g.task || "";
+  f("book").focus();
+  li.querySelector('[data-x="cancel"]').onclick = () => renderRecent();
+  li.querySelector('[data-x="save"]').onclick = () => {
+    const book = f("book").value.trim(), num = f("num").value.trim(), topic = f("topic").value.trim() || g.topic;
+    const task = f("task").value.toUpperCase().replace(/\s+/g, "");
+    const all = loadGames();
+    const pageChanged = String(num) !== String(g.num || "");
+    let upd;
+    if(!task || (task === String(g.task || "").toUpperCase() && !g.taskManual && pageChanged)){
+      upd = {task: undefined, taskManual: undefined};            // empty (or page changed): automatic number
+    } else if(task === String(g.task || "").toUpperCase()){
+      upd = {};                                                  // unchanged
+    } else {
+      if(!/^[0-9]{3,6}[A-Z]?$/.test(task)){ li.querySelector(".edmsg").textContent = "⚠️ Use numbers, e.g. 65008 (a letter at the end is allowed: 65008B)."; return; }
+      const other = all.find(x => x.id !== g.id && String(x.task || "").toUpperCase() === task);
+      if(other){ li.querySelector(".edmsg").textContent = "⚠️ " + task + " is already used by " + gameCode(other) + " · " + other.topic + "."; return; }
+      upd = {task, taskManual: true};
+    }
+    saveGames(all.map(x => {
+      if(x.id !== g.id) return x;
+      const y = {...x, book, num, topic, ...upd};
+      if(y.task === undefined) delete y.task;
+      if(y.taskManual === undefined) delete y.taskManual;
+      return y;
+    }));
+    renderRecent(g.id);
+  };
+  li.querySelectorAll("input").forEach(inp => inp.addEventListener("keydown", e => { if(e.key === "Enter") li.querySelector('[data-x="save"]').click(); }));
 }
 
 /* ---------- setup form ---------- */
@@ -1004,7 +1027,7 @@ $("tTaskGo").onclick = () => {
   setStatus("");
   $("lvl").value = g.level; updateCreate();
   renderRecent(g.id);
-  const li = document.querySelector(".recent li.fresh");
+  const li = document.querySelector(".recent tr.fresh");
   if(li) li.scrollIntoView({behavior: "smooth", block: "center"});
 };
 $("tTask").addEventListener("keydown", e => { if(e.key === "Enter") $("tTaskGo").click(); });
@@ -1156,7 +1179,7 @@ $("create").onclick = async () => {
     setStatus("✓ Game created. Start it below with 1 or 2 teams.");
     // empty the boxes for the next game (the class stays chosen)
     $("book").value = ""; $("num").value = ""; $("gram").value = "";
-    const fresh = document.querySelector(".recent li.fresh");
+    const fresh = document.querySelector(".recent tr.fresh");
     if(fresh) fresh.scrollIntoView({behavior: "smooth", block: "center"});
   } catch(e){
     const msg = {
@@ -1764,6 +1787,15 @@ async function drawLb(box, id, T, added){
       return;
     } catch(e){}
   }
+  if(!ONLINE && !SHARED){
+    const all = await sheetScores(true);
+    if(all && all[id] && all[id].length){
+      const merged = [...all[id], ...loadLb(id).filter(e => !all[id].some(x => x.name === e.name && +x.score === +e.score))]
+        .sort((a, b) => b.score - a.score || a.secs - b.secs);
+      renderLb(box, merged, T, added && (e => added.some(a => a.name === e.name && +a.score === +e.score)));
+      return;
+    }
+  }
   renderLb(box, loadLb(id), T, added && (e => added.some(a => a.at === e.at)));
 }
 async function fetchTop(ids, n){
@@ -1791,7 +1823,7 @@ function renderLogin(msg, bad){
   const box = $("login");
   if(!ONLINE){ box.hidden = true; $("libList").hidden = false; $("sTaskBox").hidden = false; return; }
   box.hidden = false;
-  $("libList").hidden = !STU;
+  $("libList").hidden = true;   // logged in: the tasks are shown in the table below, not as a list
   $("sTaskBox").hidden = !STU;
   if(STU && $("otherCls").hidden && new URLSearchParams(location.search).get("class") && new Set(LIBRARY.map(g => g.level)).size > 1) $("otherCls").hidden = false;
   if(STU){
@@ -2008,13 +2040,13 @@ $("gram").addEventListener("keydown", e => { if(e.key === "Enter") $("create").c
 /* ---------- student library ---------- */
 // best 3 scores shown under every game, without opening the leaderboard
 async function fillTops(){
-  const spans = [...document.querySelectorAll("#libList:not([hidden]) .tops, #myTable:not([hidden]) .tops")];
+  const spans = [...document.querySelectorAll("#libList:not([hidden]) .tops, #myTable:not([hidden]) .tops, #recent .tops")];
   if(!spans.length) return;
   const T = UI[langOf(LIBRARY[0] ? LIBRARY[0].level : "E")];
   const show = (span, list) => {
     span.textContent = list.length
       ? list.slice(0, 3).map((e, k) => ["🥇","🥈","🥉"][k] + " " + e.name + " " + e.score).join("\n")
-      : (span.closest("#myTable") ? "–" : T.lbEmpty);
+      : (span.closest("#myTable, #recent") ? "–" : T.lbEmpty);
   };
   spans.forEach(sp => show(sp, loadLb(sp.dataset.id)));
   if(ONLINE){
@@ -2022,7 +2054,33 @@ async function fillTops(){
       const top = await fetchTop(spans.map(sp => sp.dataset.id), 3);
       spans.forEach(sp => show(sp, top[sp.dataset.id] || []));
     } catch(e){}
+  } else if(spans.some(sp => sp.closest("#recent"))){
+    const all = await sheetScores();
+    if(all) spans.forEach(sp => show(sp, all[sp.dataset.id] || []));
   }
+}
+// teacher (inside Claude): all students' scores from the Scores tab, best first
+let SHEET_SCORES = null, sheetAsk = null;
+async function sheetScores(refresh){
+  if(SHEET_SCORES && !refresh) return SHEET_SCORES;
+  if(sheetAsk && !refresh) return sheetAsk;
+  sheetAsk = (async () => {
+    try {
+      const mcp = (window.claude && window.claude.use) ? await window.claude.use("mcp") : null;
+      if(!mcp) return null;
+      const r = await mcp.callTool("Google Sheets", "get_values", {spreadsheetId: SHEET_ID, range: "Scores!A2:F"}, {cache: false});
+      const out = {};
+      // Scores: A date, B game code, C name, D score, E seconds, F game id (older rows: id in B)
+      ((r && r.payload && r.payload.values) || []).forEach(x => {
+        const id = String(x[5] || x[1] || ""); if(!id) return;
+        (out[id] = out[id] || []).push({name: x[2], score: +x[3] || 0, secs: +x[4] || 0});
+      });
+      Object.values(out).forEach(l => l.sort((a, b) => b.score - a.score || a.secs - b.secs));
+      SHEET_SCORES = out;
+      return out;
+    } catch(e){ return null; } finally { sheetAsk = null; }
+  })();
+  return sheetAsk;
 }
 let libLevel = null, libTeams = 1;
 document.querySelectorAll("#libTeams button").forEach(b => b.onclick = () => {
@@ -2061,7 +2119,7 @@ function drawMyTable(level){
   box.innerHTML = '<table><thead>' +
     '<tr class="sumrow"><td colspan="6"><span>Σετ <b class="big"></b></span><span>Μέσος όρος <b class="big"></b></span></td></tr>' +
     '<tr><th>Άσκηση</th><th>Περιγραφή</th><th>Ημ/νία</th><th>/20</th><th>Top 3</th><th></th></tr></thead><tbody></tbody></table>' +
-    '<p class="sharenote">Πάτα τον αριθμό μιας άσκησης για να την παίξεις.' + (STU.grades ? '' : ' …') + '</p>';
+    '<p class="sharenote">Πάτα τον αριθμό μιας άσκησης για να παίξεις.' + (STU.grades ? '' : ' …') + '</p>';
   const bigs = box.querySelectorAll(".sumrow b");
   bigs[0].textContent = done + " / " + games.length;
   bigs[1].textContent = done ? avg + "/20" : "–";
