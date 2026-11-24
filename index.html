@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><!-- frame-runtime --><!-- /frame-runtime -->
+<html lang="en" data-theme="light" style="color-scheme: light;"><head><!-- frame-runtime --><!-- /frame-runtime -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SKooL Sentence Tiles</title>
@@ -196,6 +196,7 @@ body .top h1,body .library > h2,body .recent h3,body #syncNote,body .tpick > spa
 .board.two .gk{font-size:clamp(1.35rem,2.5vw,2.1rem)}
 .count{color:var(--muted);font-size:1.2rem;margin:0}
 .count b{color:var(--team, var(--accent));font-size:1.6rem}
+.rsave input.locked{background:var(--track);cursor:default;font-weight:800;pointer-events:none}
 .pausebtn{margin-top:1.1rem;font-size:1.25rem;padding:.6rem 1.4rem}
 .anspause{text-align:center}
 .anspause .pausebtn{margin-top:.5rem}
@@ -2091,6 +2092,9 @@ function checkAllDone(T, stopped){
   // names for the leaderboard
   const gameId = current.id;
   const save = $("rsave"); save.innerHTML = ""; save.hidden = false;
+  // student page: Play again / All games appear only after the score is saved
+  const rctl = $("results").querySelector(".controls");
+  rctl.style.display = (IS_STU_PAGE && !stopped) ? "none" : "";
   if(stopped){
     // an unfinished game doesn't go on the leaderboard
     if(panels.length === 2){
@@ -2102,7 +2106,9 @@ function checkAllDone(T, stopped){
     $("results").hidden = false;
     return;
   }
-  const student = ONLINE && SHARED && STU && panels.length === 1;
+  // a logged-in student: the first name comes from their password and can't be changed
+  const loggedIn = SHARED && STU && STU.name && panels.length === 1;
+  const student = ONLINE && loggedIn;
   if(student){
     const note = document.createElement("p"); note.className = "sharenote"; note.textContent = "…";
     save.appendChild(note);
@@ -2112,7 +2118,7 @@ function checkAllDone(T, stopped){
     const inp = document.createElement("input");
     inp.type = "text"; inp.maxLength = 40; inp.placeholder = T.nameFor(p.name);
     inp.setAttribute("aria-label", T.nameFor(p.name));
-    if(student){ inp.value = STU.name; inp.readOnly = true; }
+    if(loggedIn){ inp.value = STU.name; inp.readOnly = true; inp.tabIndex = -1; inp.classList.add("locked"); inp.title = "🔒"; }
     save.appendChild(inp);
     return inp;
   });
@@ -2137,6 +2143,7 @@ function checkAllDone(T, stopped){
     if(ONLINE){ try { await postScores(gameId, added, gameCode(current)); } catch(e){} }
     save.innerHTML = "";
     const ok = document.createElement("p"); ok.className = "sharenote"; ok.textContent = T.saved; save.appendChild(ok);
+    rctl.style.display = "";
     drawLb($("rboard"), gameId, T, added);
   };
   save.appendChild(btn);
@@ -2413,7 +2420,12 @@ async function updateStudentPage(){
     step("Saved index.html with " + lib.length + " games" + (skipped ? " (" + skipped + " not double-checked, try again later)" : "") + ". Upload it to the sentence-tiles repo on GitHub (replace the old one).", 1);
   } catch(e){
     msg.textContent = (e && e.code === "declined") ? "Not saved." : "Couldn’t save the file (" + ((e && e.code) || (e && e.message) || "error") + ").";
-  } finally { btn.disabled = false; }
+  } finally {
+    btn.disabled = false;
+    // the bar disappears once the work is finished
+    bar.querySelector("i").style.width = "100%"; bar.querySelector("span").textContent = "100%";
+    setTimeout(() => { bar.hidden = true; bar.querySelector("i").style.width = "0"; }, 1200);
+  }
 }
 $("updBtn").onclick = updateStudentPage;
 $("scoresUrl").value = getScoresUrl();
